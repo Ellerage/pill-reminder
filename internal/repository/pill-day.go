@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -22,11 +23,13 @@ func NewPillDayRepo(db *mongo.Database) *PillDayRepo {
 	return &PillDayRepo{db: db}
 }
 
-func (repo *PillDayRepo) GetByDate(date string) (*model.PillDay, error) {
+func (repo *PillDayRepo) GetByDate(date time.Time) (*model.PillDay, error) {
 	var result *model.PillDay
 
+	formattedDate := date.Format("2006-01-02")
+
 	// TODO: add database name to config?
-	err := repo.db.Collection("pill-day").FindOne(context.TODO(), bson.M{"date": date}).Decode(&result)
+	err := repo.db.Collection("pill-day").FindOne(context.TODO(), bson.M{"date": formattedDate}).Decode(&result)
 
 	if err != nil {
 		return nil, err
@@ -35,8 +38,10 @@ func (repo *PillDayRepo) GetByDate(date string) (*model.PillDay, error) {
 	return result, nil
 }
 
-func (repo *PillDayRepo) Create(timeOfTaking *string) error {
-	pillDay := model.PillDay{Date: utils.GetNowDateTbilisi(), TimeOfTaking: timeOfTaking}
+func (repo *PillDayRepo) Create(timeOfTaking *time.Time) error {
+	formattedTime := timeOfTaking.Format("15:04")
+
+	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(nil), TimeOfTaking: &formattedTime}
 
 	// TODO: add database name to config?
 	_, err := repo.db.Collection("pill-day").InsertOne(context.TODO(), pillDay)
@@ -48,11 +53,11 @@ func (repo *PillDayRepo) Create(timeOfTaking *string) error {
 	return err
 }
 
-func (repo *PillDayRepo) UpdateTimeByDate(date string, time string) error {
-	toUpdate := bson.M{"$set": bson.M{"timeOfTaking": time}}
+func (repo *PillDayRepo) UpdateTimeByDate(date time.Time, time time.Time) error {
+	toUpdate := bson.M{"$set": bson.M{"timeOfTaking": time.Format("15:04")}}
 
 	// TODO: add database name to config?
-	_, err := repo.db.Collection("pill-day").UpdateOne(context.TODO(), bson.M{"date": date}, toUpdate)
+	_, err := repo.db.Collection("pill-day").UpdateOne(context.TODO(), bson.M{"date": date.Format("2006-01-02")}, toUpdate)
 
 	if err != nil {
 		fmt.Println(err)

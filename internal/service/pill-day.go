@@ -6,6 +6,7 @@ import (
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/repository"
 	"pill-reminder/internal/utils"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
@@ -18,30 +19,29 @@ func NewPillDayService(repo *repository.PillDayRepo) *PillDayService {
 	return &PillDayService{pillDayRepo: repo}
 }
 
-func (s *PillDayService) GetByDate(date string) (*model.PillDay, error) {
+func (s *PillDayService) GetByDate(date time.Time) (*model.PillDay, error) {
 	return s.pillDayRepo.GetByDate(date)
 }
 
-func (s *PillDayService) Create(timeOfTaking *string) error {
-	return s.pillDayRepo.Create(timeOfTaking)
+func (s *PillDayService) Create(timeOfTaking time.Time) error {
+	return s.pillDayRepo.Create(&timeOfTaking)
 }
 
-func (s *PillDayService) UpdateTimeByDate(date string, newTime string) error {
+func (s *PillDayService) UpdateTimeByDate(date time.Time, newTime time.Time) error {
 	return s.pillDayRepo.UpdateTimeByDate(date, newTime)
 }
 
 func (s *PillDayService) MarkAsTakenNow() error {
-	date := utils.GetNowDateTbilisi()
-	time := utils.GetNowTimeTbilisi()
+	dateTime := utils.GetNowDateTime(nil)
 
-	_, err := s.pillDayRepo.GetByDate(date)
+	_, err := s.pillDayRepo.GetByDate(dateTime)
 
 	var resultError error
 
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		resultError = s.pillDayRepo.Create(&time)
+		resultError = s.pillDayRepo.Create(&dateTime)
 	} else if err == nil {
-		resultError = s.pillDayRepo.UpdateTimeByDate(date, time)
+		resultError = s.pillDayRepo.UpdateTimeByDate(dateTime, dateTime)
 	} else {
 		fmt.Println(err)
 	}
@@ -50,7 +50,7 @@ func (s *PillDayService) MarkAsTakenNow() error {
 }
 
 func (s *PillDayService) IsTakenToday() (bool, error) {
-	date := utils.GetNowDateTbilisi()
+	date := utils.GetNowDateTime(nil)
 
 	pillDay, err := s.pillDayRepo.GetByDate(date)
 

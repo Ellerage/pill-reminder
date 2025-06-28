@@ -25,12 +25,6 @@ var (
 var c *cron.Cron
 var subCronId cron.EntryID
 
-// func InitialCheck() {
-// 	date := utils.GetNowDateTbilisi()
-// 	time := utils.GetNowTimeTbilisi()
-
-// }
-
 func ReminderNotification(deps NotifierDeps) func() {
 	return func() {
 		isTakenToday, err := deps.PillDayService.IsTakenToday()

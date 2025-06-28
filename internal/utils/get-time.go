@@ -4,29 +4,40 @@ import (
 	"time"
 )
 
-func GetNowDateTbilisi() string {
-	// TODO: get timezone from args
-	loc, err := time.LoadLocation("Asia/Tbilisi")
+type GetDateTimeOptions struct {
+	Timezone *string
+}
+
+type GetFormattedNowDateTimeOptions struct {
+	GetDateTimeOptions
+	Format *string
+}
+
+func GetNowDateTime(timezone *string) time.Time {
+	if timezone == nil {
+		defaultTz := "Asia/Tbilisi"
+		timezone = &defaultTz
+	}
+
+	loc, err := time.LoadLocation(*timezone)
+
 	if err != nil {
 		panic(err)
 	}
 
-	// TODO: return without format
-	now := time.Now().In(loc).Format("2006-01-02")
+	now := time.Now().In(loc)
 
 	return now
 }
 
-func GetNowTimeTbilisi() string {
-	// TODO: get timezone from args
-	loc, err := time.LoadLocation("Asia/Tbilisi")
+func GetFormattedNowDate(timezone *string) string {
+	return GetNowDateTime(timezone).Format("2006-01-02")
+}
 
-	if err != nil {
-		panic(err)
-	}
+func GetFormattedNowTime(timezone *string) string {
+	return GetNowDateTime(timezone).Format("15:04")
+}
 
-	// TODO: return without format
-	now := time.Now().In(loc).Format("15:04")
-
-	return now
+func GetFormattedNowDateTime(options GetFormattedNowDateTimeOptions) string {
+	return GetNowDateTime(options.Timezone).Format(*options.Format)
 }
