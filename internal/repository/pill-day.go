@@ -28,7 +28,6 @@ func (repo *PillDayRepo) GetByDate(date time.Time) (*model.PillDay, error) {
 
 	formattedDate := date.Format("2006-01-02")
 
-	// TODO: add database name to config?
 	err := repo.db.Collection("pill-day").FindOne(context.TODO(), bson.M{"date": formattedDate}).Decode(&result)
 
 	if err != nil {
@@ -43,7 +42,6 @@ func (repo *PillDayRepo) Create(timeOfTaking *time.Time) error {
 
 	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(nil), TimeOfTaking: &formattedTime}
 
-	// TODO: add database name to config?
 	_, err := repo.db.Collection("pill-day").InsertOne(context.TODO(), pillDay)
 
 	if err != nil {
@@ -56,7 +54,6 @@ func (repo *PillDayRepo) Create(timeOfTaking *time.Time) error {
 func (repo *PillDayRepo) UpdateTimeByDate(date time.Time, time time.Time) error {
 	toUpdate := bson.M{"$set": bson.M{"timeOfTaking": time.Format("15:04")}}
 
-	// TODO: add database name to config?
 	_, err := repo.db.Collection("pill-day").UpdateOne(context.TODO(), bson.M{"date": date.Format("2006-01-02")}, toUpdate)
 
 	if err != nil {
