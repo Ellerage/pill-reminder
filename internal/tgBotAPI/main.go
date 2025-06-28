@@ -45,6 +45,7 @@ func SendMessage(chatId int64, message string) {
 
 	replyKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
+			// TODO: i18n
 			tgbotapi.NewKeyboardButton("Take"),
 			// tgbotapi.NewKeyboardButton("Delay 30 min"),
 		),
@@ -75,6 +76,7 @@ func RegisterMessageListener(deps BotAPIDeps) {
 
 // TODO: Make it more common and save userId/chatId in db
 func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
+	// TODO: i18n
 	if message.Chat.ID == deps.Config.MY_CHAT_ID && message.Text == "Take" {
 		deps.PillDayService.MarkAsTakenNow()
 	}

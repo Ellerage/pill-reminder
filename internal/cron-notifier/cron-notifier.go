@@ -25,7 +25,13 @@ var (
 var c *cron.Cron
 var subCronId cron.EntryID
 
-func ReminderJob(deps NotifierDeps) func() {
+// func InitialCheck() {
+// 	date := utils.GetNowDateTbilisi()
+// 	time := utils.GetNowTimeTbilisi()
+
+// }
+
+func ReminderNotification(deps NotifierDeps) func() {
 	return func() {
 		isTakenToday, err := deps.PillDayService.IsTakenToday()
 
@@ -34,6 +40,7 @@ func ReminderJob(deps NotifierDeps) func() {
 		}
 
 		if !isTakenToday {
+			// TODO: I18n
 			tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, "Take a pill")
 
 			subCronId, _ = c.AddFunc(repeatedNotificationCron, func() {
@@ -46,6 +53,7 @@ func ReminderJob(deps NotifierDeps) func() {
 				if isTakenToday {
 					c.Remove(subCronId)
 				} else {
+					// TODO: I18n
 					tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, "Reminder take a pill")
 				}
 			})
@@ -58,9 +66,10 @@ func RegisterCronNotifier(deps NotifierDeps) {
 	loc, _ := time.LoadLocation(timezone)
 	c = cron.New(cron.WithLocation(loc))
 
-	ReminderJob(deps)()
+	// TODO: Replace with initial check
+	ReminderNotification(deps)()
 
-	c.AddFunc(firstNotificationCron, ReminderJob(deps))
+	c.AddFunc(firstNotificationCron, ReminderNotification(deps))
 	c.Start()
 
 	log.Println("Cron started")

@@ -9,10 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
-var (
-	DBClient *mongo.Client
-)
-
 func Connect(uri string) *mongo.Database {
 	// Use the SetServerAPIOptions() method to set the version of the Stable API on the client
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
@@ -31,15 +27,15 @@ func Connect(uri string) *mongo.Database {
 
 	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
 
-	DBClient = client
-
+	// TODO: add database name to config
 	return client.Database("bill-reminder")
 }
 
-func Collection(collName string) *mongo.Collection {
-	if DBClient == nil {
-		panic("No db client was initialized")
-	}
+// func Collection(collName string) *mongo.Collection {
+// 	if DBClient == nil {
+// 		panic("No db client was initialized")
+// 	}
 
-	return DBClient.Database("bill-reminder").Collection(collName)
-}
+// 	// TODO: add database name to config
+// 	return DBClient.Database("bill-reminder").Collection(collName)
+// }
