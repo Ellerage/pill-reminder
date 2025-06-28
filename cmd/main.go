@@ -17,10 +17,14 @@ func main() {
 	pillDayRepo := repository.NewPillDayRepo(db)
 	pillDayService := service.NewPillDayService(pillDayRepo)
 
+	userRepo := repository.NewUserRepo(db)
+	userService := service.NewUserService(userRepo)
+
 	cronnotifier.RegisterCronNotifier(
 		cronnotifier.NotifierDeps{
 			Config:         cfg,
 			PillDayService: pillDayService,
+			UserService:    userService,
 		},
 	)
 

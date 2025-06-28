@@ -14,15 +14,11 @@ import (
 
 type NotifierDeps struct {
 	PillDayService *service.PillDayService
+	UserService    *service.UserService
 	Config         *configs.Config
 }
 
-var (
-	hoursToStart             = 17
-	firstNotificationCron    = "0 17 * * *"
-	repeatedNotificationCron = "*/20 * * * *"
-	timezone                 = "Asia/Tbilisi"
-)
+var repeatedNotificationCron = "*/20 * * * *"
 
 var c *cron.Cron
 var subCronId cron.EntryID
@@ -53,28 +49,30 @@ func ReminderNotification(deps NotifierDeps) func() {
 	}
 }
 
-func InitializationOnStartUp(deps NotifierDeps) {
-	now := utils.GetNowDateTime(nil)
-	timeToStart := utils.GetDateTimeFrom(utils.GetDateTimeFromOptions{
-		Hours:    &hoursToStart,
-		Timezone: nil,
-	})
-
-	if now.After(timeToStart) {
-		if taken, _ := deps.PillDayService.IsTakenToday(); !taken {
-			sendRepeatedReminder(deps)
-		}
-	}
-}
-
 func RegisterCronNotifier(deps NotifierDeps) {
-	loc, _ := time.LoadLocation(timezone)
+
+	users, err := deps.UserService.GetAll()
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	loc, _ := time.LoadLocation(deps.Config.TIMEZONE)
 	c = cron.New(cron.WithLocation(loc))
 
-	InitializationOnStartUp(deps)
+	for _, user := range users {
+		timeToNotify, err := utils.ConvertTimeToTbilisi(user.TimeToNotify, user.Timezone)
 
-	// TODO: Create users table in db. AddFunc depends on data in db
-	c.AddFunc(firstNotificationCron, ReminderNotification(deps))
+		if err != nil {
+			log.Println(err)
+		}
+
+		cronStr := fmt.Sprintf("%d %d * * *", timeToNotify.Minute(), timeToNotify.Hour())
+
+		// TODO: extend collection with userId of history
+		c.AddFunc(cronStr, ReminderNotification(deps))
+	}
+
 	c.Start()
 
 	log.Println("Cron started")

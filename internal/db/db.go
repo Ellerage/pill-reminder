@@ -30,12 +30,3 @@ func Connect(uri string) *mongo.Database {
 	// TODO: add database name to config
 	return client.Database("bill-reminder")
 }
-
-// func Collection(collName string) *mongo.Collection {
-// 	if DBClient == nil {
-// 		panic("No db client was initialized")
-// 	}
-
-// 	// TODO: add database name to config
-// 	return DBClient.Database("bill-reminder").Collection(collName)
-// }

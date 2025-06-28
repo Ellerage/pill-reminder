@@ -65,3 +65,25 @@ func GetDateTimeFrom(options GetDateTimeFromOptions) time.Time {
 	)
 
 }
+
+func ConvertTimeToTbilisi(timeStr, userTZ string) (time.Time, error) {
+	userLoc, err := time.LoadLocation(userTZ)
+	if err != nil {
+		return time.Time{}, err
+	}
+	tbilisiLoc, err := time.LoadLocation("Asia/Tbilisi")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	now := time.Now().In(userLoc)
+	parsed, err := time.ParseInLocation("15:04", timeStr, userLoc)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	userTime := time.Date(now.Year(), now.Month(), now.Day(),
+		parsed.Hour(), parsed.Minute(), 0, 0, userLoc)
+
+	return userTime.In(tbilisiLoc), nil
+}
