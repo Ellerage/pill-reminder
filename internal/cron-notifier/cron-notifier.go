@@ -6,6 +6,7 @@ import (
 	"pill-reminder/configs"
 	"pill-reminder/internal/service"
 	tgbotapi "pill-reminder/internal/tgBotAPI"
+	"pill-reminder/internal/utils"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -34,8 +35,7 @@ func ReminderNotification(deps NotifierDeps) func() {
 		}
 
 		if !isTakenToday {
-			// TODO: I18n
-			tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, "Take a pill")
+			tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("firstNotification"))
 
 			subCronId, _ = c.AddFunc(repeatedNotificationCron, func() {
 				isTakenToday, err := deps.PillDayService.IsTakenToday()
@@ -47,8 +47,7 @@ func ReminderNotification(deps NotifierDeps) func() {
 				if isTakenToday {
 					c.Remove(subCronId)
 				} else {
-					// TODO: I18n
-					tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, "Reminder take a pill")
+					tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("reminderNotification"))
 				}
 			})
 		}

@@ -5,6 +5,7 @@ import (
 	"log"
 	"pill-reminder/configs"
 	"pill-reminder/internal/service"
+	"pill-reminder/internal/utils"
 	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -32,21 +33,13 @@ func Init(token string) {
 	})
 }
 
-// func GetBot() *tgbotapi.BotAPI {
-// 	if bot == nil {
-// 		Init()
-// 	}
-
-// 	return bot
-// }
-
 func SendMessage(chatId int64, message string) {
 	msg := tgbotapi.NewMessage(chatId, message)
 
 	replyKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			// TODO: i18n
-			tgbotapi.NewKeyboardButton("Take"),
+			tgbotapi.NewKeyboardButton(utils.GetI18nMessage("markTakenBtn")),
+			// TODO: Add delay function
 			// tgbotapi.NewKeyboardButton("Delay 30 min"),
 		),
 	)
@@ -76,7 +69,6 @@ func RegisterMessageListener(deps BotAPIDeps) {
 
 // TODO: Make it more common and save userId/chatId in db
 func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
-	// TODO: i18n
 	if message.Chat.ID == deps.Config.MY_CHAT_ID && message.Text == "Take" {
 		deps.PillDayService.MarkAsTakenNow()
 	}
