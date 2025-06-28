@@ -18,6 +18,7 @@ type NotifierDeps struct {
 }
 
 var (
+	hoursToStart             = 17
 	firstNotificationCron    = "0 17 * * *"
 	repeatedNotificationCron = "*/20 * * * *"
 	timezone                 = "Asia/Tbilisi"
@@ -26,32 +27,43 @@ var (
 var c *cron.Cron
 var subCronId cron.EntryID
 
-func ReminderNotification(deps NotifierDeps) func() {
-	return func() {
+func sendRepeatedReminder(deps NotifierDeps) {
+	tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("firstNotification"))
+
+	subCronId, _ = c.AddFunc(repeatedNotificationCron, func() {
 		isTakenToday, err := deps.PillDayService.IsTakenToday()
 
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		if !isTakenToday {
-			tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("firstNotification"))
-
-			subCronId, _ = c.AddFunc(repeatedNotificationCron, func() {
-				isTakenToday, err := deps.PillDayService.IsTakenToday()
-
-				if err != nil {
-					fmt.Println(err)
-				}
-
-				if isTakenToday {
-					c.Remove(subCronId)
-				} else {
-					tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("reminderNotification"))
-				}
-			})
+		if isTakenToday {
+			c.Remove(subCronId)
+		} else {
+			tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("reminderNotification"))
 		}
+	})
+}
 
+func ReminderNotification(deps NotifierDeps) func() {
+	return func() {
+		if taken, _ := deps.PillDayService.IsTakenToday(); !taken {
+			sendRepeatedReminder(deps)
+		}
+	}
+}
+
+func InitializationOnStartUp(deps NotifierDeps) {
+	now := utils.GetNowDateTime(nil)
+	timeToStart := utils.GetDateTimeFrom(utils.GetDateTimeFromOptions{
+		Hours:    &hoursToStart,
+		Timezone: nil,
+	})
+
+	if now.After(timeToStart) {
+		if taken, _ := deps.PillDayService.IsTakenToday(); !taken {
+			sendRepeatedReminder(deps)
+		}
 	}
 }
 
@@ -59,9 +71,9 @@ func RegisterCronNotifier(deps NotifierDeps) {
 	loc, _ := time.LoadLocation(timezone)
 	c = cron.New(cron.WithLocation(loc))
 
-	// TODO: Replace with initial check
-	ReminderNotification(deps)()
+	InitializationOnStartUp(deps)
 
+	// TODO: Create users table in db. AddFunc depends on data in db
 	c.AddFunc(firstNotificationCron, ReminderNotification(deps))
 	c.Start()
 

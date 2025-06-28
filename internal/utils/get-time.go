@@ -4,13 +4,14 @@ import (
 	"time"
 )
 
-type GetDateTimeOptions struct {
+type GetDateTimeFromOptions struct {
+	Hours    *int
 	Timezone *string
 }
 
 type GetFormattedNowDateTimeOptions struct {
-	GetDateTimeOptions
-	Format *string
+	Timezone *string
+	Format   *string
 }
 
 func GetNowDateTime(timezone *string) time.Time {
@@ -40,4 +41,27 @@ func GetFormattedNowTime(timezone *string) string {
 
 func GetFormattedNowDateTime(options GetFormattedNowDateTimeOptions) string {
 	return GetNowDateTime(options.Timezone).Format(*options.Format)
+}
+
+func GetDateTimeFrom(options GetDateTimeFromOptions) time.Time {
+	var timezone string
+
+	if options.Timezone == nil {
+		timezone = "Asia/Tbilisi"
+	} else {
+		timezone = *options.Timezone
+	}
+
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		panic(err)
+	}
+
+	now := time.Now().In(loc)
+
+	return time.Date(
+		now.Year(), now.Month(), now.Day(),
+		*options.Hours, 0, 0, 0, loc,
+	)
+
 }
