@@ -11,7 +11,7 @@ import (
 
 func main() {
 	cfg := configs.InitConfig()
-	db := db.Connect(cfg.MONGO_URL)
+	db := db.Connect(db.ConnectMongoOptions{Uri: cfg.MONGO_URL, DBName: cfg.MONGO_DB_NAME})
 	tgbotapi.Init(cfg.BOT_TOKEN)
 
 	pillDayRepo := repository.NewPillDayRepo(db)

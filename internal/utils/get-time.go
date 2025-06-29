@@ -14,9 +14,11 @@ type GetFormattedNowDateTimeOptions struct {
 	Format   *string
 }
 
+var Timezone = "Asia/Tbilisi"
+
 func GetNowDateTime(timezone *string) time.Time {
 	if timezone == nil {
-		defaultTz := "Asia/Tbilisi"
+		defaultTz := Timezone
 		timezone = &defaultTz
 	}
 
@@ -47,7 +49,7 @@ func GetDateTimeFrom(options GetDateTimeFromOptions) time.Time {
 	var timezone string
 
 	if options.Timezone == nil {
-		timezone = "Asia/Tbilisi"
+		timezone = Timezone
 	} else {
 		timezone = *options.Timezone
 	}
@@ -71,7 +73,7 @@ func ConvertTimeToTbilisi(timeStr, userTZ string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	tbilisiLoc, err := time.LoadLocation("Asia/Tbilisi")
+	tbilisiLoc, err := time.LoadLocation(Timezone)
 	if err != nil {
 		return time.Time{}, err
 	}

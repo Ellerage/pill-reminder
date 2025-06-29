@@ -1,8 +1,8 @@
 package tgbotapi
 
 import (
-	"fmt"
 	"log"
+	"log/slog"
 	"pill-reminder/configs"
 	"pill-reminder/internal/service"
 	"pill-reminder/internal/utils"
@@ -48,7 +48,7 @@ func SendMessage(chatId int64, message string) {
 	_, err = bot.Send(msg)
 
 	if err != nil {
-		fmt.Println("Ошибка отправки:", err)
+		slog.Error(err.Error())
 	}
 }
 

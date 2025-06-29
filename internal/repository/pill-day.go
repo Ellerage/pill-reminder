@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"time"
@@ -38,14 +38,21 @@ func (repo *PillDayRepo) GetByDate(date time.Time) (*model.PillDay, error) {
 }
 
 func (repo *PillDayRepo) Create(timeOfTaking *time.Time) error {
-	formattedTime := timeOfTaking.Format("15:04")
+	var formattedTime *string
 
-	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(nil), TimeOfTaking: &formattedTime}
+	if timeOfTaking != nil {
+		str := timeOfTaking.Format("15:04")
+		formattedTime = &str
+	} else {
+		formattedTime = nil
+	}
+
+	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(nil), TimeOfTaking: formattedTime}
 
 	_, err := repo.db.Collection("pill-day").InsertOne(context.TODO(), pillDay)
 
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 
 	return err
@@ -57,7 +64,7 @@ func (repo *PillDayRepo) UpdateTimeByDate(date time.Time, time time.Time) error 
 	_, err := repo.db.Collection("pill-day").UpdateOne(context.TODO(), bson.M{"date": date.Format("2006-01-02")}, toUpdate)
 
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 
 	return err

@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"fmt"
+	"log/slog"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/repository"
 	"pill-reminder/internal/utils"
@@ -43,7 +43,7 @@ func (s *PillDayService) MarkAsTakenNow() error {
 	} else if err == nil {
 		resultError = s.pillDayRepo.UpdateTimeByDate(dateTime, dateTime)
 	} else {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 
 	return resultError

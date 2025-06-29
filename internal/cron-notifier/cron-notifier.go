@@ -3,6 +3,7 @@ package cronnotifier
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"pill-reminder/configs"
 	"pill-reminder/internal/service"
 	tgbotapi "pill-reminder/internal/tgBotAPI"
@@ -23,34 +24,33 @@ var repeatedNotificationCron = "*/20 * * * *"
 var c *cron.Cron
 var subCronId cron.EntryID
 
-func sendRepeatedReminder(deps NotifierDeps) {
-	tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("firstNotification"))
+func sendRepeatedReminder(deps NotifierDeps, chatId int64) {
+	tgbotapi.SendMessage(chatId, utils.GetI18nMessage("firstNotification"))
 
 	subCronId, _ = c.AddFunc(repeatedNotificationCron, func() {
 		isTakenToday, err := deps.PillDayService.IsTakenToday()
 
 		if err != nil {
-			fmt.Println(err)
+			slog.Error(err.Error())
 		}
 
 		if isTakenToday {
 			c.Remove(subCronId)
 		} else {
-			tgbotapi.SendMessage(deps.Config.MY_CHAT_ID, utils.GetI18nMessage("reminderNotification"))
+			tgbotapi.SendMessage(chatId, utils.GetI18nMessage("reminderNotification"))
 		}
 	})
 }
 
-func ReminderNotification(deps NotifierDeps) func() {
+func ReminderNotification(deps NotifierDeps, chatId int64) func() {
 	return func() {
 		if taken, _ := deps.PillDayService.IsTakenToday(); !taken {
-			sendRepeatedReminder(deps)
+			sendRepeatedReminder(deps, chatId)
 		}
 	}
 }
 
 func RegisterCronNotifier(deps NotifierDeps) {
-
 	users, err := deps.UserService.GetAll()
 
 	if err != nil {
@@ -64,13 +64,14 @@ func RegisterCronNotifier(deps NotifierDeps) {
 		timeToNotify, err := utils.ConvertTimeToTbilisi(user.TimeToNotify, user.Timezone)
 
 		if err != nil {
-			log.Println(err)
+			slog.Error("Error creating cron", "error", err)
 		}
 
 		cronStr := fmt.Sprintf("%d %d * * *", timeToNotify.Minute(), timeToNotify.Hour())
 
-		// TODO: extend collection with userId of history
-		c.AddFunc(cronStr, ReminderNotification(deps))
+		c.AddFunc(cronStr, ReminderNotification(deps, user.ChatId))
+
+		slog.Info(fmt.Sprintf("Created Cron for chatId %d, at time %s", user.ChatId, cronStr))
 	}
 
 	c.Start()

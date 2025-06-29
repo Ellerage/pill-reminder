@@ -1,7 +1,7 @@
 package model
 
 type PillDay struct {
-	Date         string  `bson:"date,omitempty"`
+	Date         string  `bson:"date"`
 	TimeOfTaking *string `bson:"timeOfTaking,omitempty"`
 }
 

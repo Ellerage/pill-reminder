@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"pill-reminder/internal/model"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -37,7 +37,7 @@ func (repo *UserRepo) Create(toCreate model.User) error {
 	_, err := repo.db.Collection("users").InsertOne(context.TODO(), toCreate)
 
 	if err != nil {
-		fmt.Println(err)
+		slog.Error(err.Error())
 	}
 
 	return err
