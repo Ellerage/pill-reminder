@@ -112,7 +112,6 @@ func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
 
 		if message.Text == string(enums.Edit) {
 			status := string(enums.UserStatusEditing)
-
 			deps.UserService.Update(chatId, model.UserUpdate{Status: &status})
 
 			SendMessage(chatId, "Enter new time to get notified - 15:04 format")
