@@ -28,7 +28,7 @@ func sendRepeatedReminder(deps NotifierDeps, chatId int64) {
 	tgbotapi.SendMessage(chatId, utils.GetI18nMessage("firstNotification"))
 
 	subCronId, _ = c.AddFunc(repeatedNotificationCron, func() {
-		isTakenToday, err := deps.PillDayService.IsTakenToday()
+		isTakenToday, err := deps.PillDayService.IsTakenToday(chatId)
 
 		if err != nil {
 			slog.Error(err.Error())
@@ -44,7 +44,7 @@ func sendRepeatedReminder(deps NotifierDeps, chatId int64) {
 
 func ReminderNotification(deps NotifierDeps, chatId int64) func() {
 	return func() {
-		if taken, _ := deps.PillDayService.IsTakenToday(); !taken {
+		if taken, _ := deps.PillDayService.IsTakenToday(chatId); !taken {
 			sendRepeatedReminder(deps, chatId)
 		}
 	}
