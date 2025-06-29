@@ -20,11 +20,14 @@ func NewPillDayRepo(db *mongo.Database) *PillDayRepo {
 }
 
 func (repo *PillDayRepo) GetByDateAndChatId(chatId int64, date time.Time) (*model.PillDay, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	var result *model.PillDay
 
 	formattedDate := date.Format("2006-01-02")
 
-	err := repo.db.Collection("pill-day").FindOne(context.TODO(), bson.M{"date": formattedDate, "chatId": chatId}).Decode(&result)
+	err := repo.db.Collection("pill-day").FindOne(ctx, bson.M{"date": formattedDate, "chatId": chatId}).Decode(&result)
 
 	if err != nil {
 		return nil, err
@@ -34,6 +37,9 @@ func (repo *PillDayRepo) GetByDateAndChatId(chatId int64, date time.Time) (*mode
 }
 
 func (repo *PillDayRepo) Create(chatId int64, timeOfTaking *time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	var formattedTime *string
 
 	if timeOfTaking != nil {
@@ -45,7 +51,7 @@ func (repo *PillDayRepo) Create(chatId int64, timeOfTaking *time.Time) error {
 
 	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(nil), TimeOfTaking: formattedTime, ChatId: chatId}
 
-	_, err := repo.db.Collection("pill-day").InsertOne(context.TODO(), pillDay)
+	_, err := repo.db.Collection("pill-day").InsertOne(ctx, pillDay)
 
 	if err != nil {
 		slog.Error(err.Error())
@@ -55,9 +61,12 @@ func (repo *PillDayRepo) Create(chatId int64, timeOfTaking *time.Time) error {
 }
 
 func (repo *PillDayRepo) UpdateTimeByDate(chatId int64, dateTime time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	toUpdate := bson.M{"$set": bson.M{"timeOfTaking": dateTime.Format("15:04")}}
 
-	_, err := repo.db.Collection("pill-day").UpdateOne(context.TODO(), bson.M{"date": dateTime.Format("2006-01-02"), "chatId": chatId}, toUpdate)
+	_, err := repo.db.Collection("pill-day").UpdateOne(ctx, bson.M{"date": dateTime.Format("2006-01-02"), "chatId": chatId}, toUpdate)
 
 	if err != nil {
 		slog.Error(err.Error())

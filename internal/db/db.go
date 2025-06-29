@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -24,7 +25,10 @@ func Connect(connectOptions ConnectMongoOptions) *mongo.Database {
 		panic(err)
 	}
 
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		panic(err)
 	}
 
