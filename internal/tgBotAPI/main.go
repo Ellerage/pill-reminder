@@ -4,8 +4,11 @@ import (
 	"log"
 	"log/slog"
 	"pill-reminder/configs"
+	"pill-reminder/internal/model"
 	"pill-reminder/internal/service"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
+	"regexp"
 	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -13,6 +16,7 @@ import (
 
 type BotAPIDeps struct {
 	PillDayService *service.PillDayService
+	UserService    *service.UserService
 	Config         *configs.Config
 }
 
@@ -39,8 +43,7 @@ func SendMessage(chatId int64, message string) {
 	replyKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(string(enums.Take)),
-			// TODO: Add delay function
-			// tgbotapi.NewKeyboardButton("Delay 30 min"),
+			tgbotapi.NewKeyboardButton(string(enums.Edit)),
 		),
 	)
 	msg.ReplyMarkup = replyKeyboard
@@ -68,7 +71,54 @@ func RegisterMessageListener(deps BotAPIDeps) {
 }
 
 func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
-	if message.Text == string(enums.Take) {
-		deps.PillDayService.MarkAsTakenNow(message.Chat.ID)
+	var chatId = message.Chat.ID
+
+	user, err := deps.UserService.GetByChatId(chatId)
+
+	if err != nil {
+		slog.Error(err.Error())
 	}
+
+	if user.Status == string(enums.UserStatusEditing) {
+		timeRegex := regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
+
+		idleStatus := string(enums.UserStatusIdle)
+
+		if timeRegex.MatchString(message.Text) {
+			deps.UserService.Update(chatId, model.UserUpdate{TimeToNotify: &message.Text, Status: &idleStatus})
+			SendMessage(chatId, "Time was updated!")
+		} else if utils.IsValidTimezone(message.Text) {
+			deps.UserService.Update(chatId, model.UserUpdate{Timezone: &message.Text, Status: &idleStatus})
+			SendMessage(chatId, "Timezone was updated!")
+		} else {
+			SendMessage(chatId, "Not valid time or timezone")
+		}
+
+		return
+	}
+
+	if user.Status == string(enums.UserStatusIdle) {
+		if message.Text == string(enums.Take) {
+			err := deps.PillDayService.MarkAsTakenNow(message.Chat.ID)
+
+			if err != nil {
+				slog.Error(err.Error())
+				SendMessage(chatId, "Try again")
+				return
+			}
+
+			SendMessage(chatId, "Checked!")
+		}
+
+		if message.Text == string(enums.Edit) {
+			status := string(enums.UserStatusEditing)
+
+			deps.UserService.Update(chatId, model.UserUpdate{Status: &status})
+
+			SendMessage(chatId, "Enter new time to get notified - 15:04 format")
+		}
+
+		return
+	}
+
 }

@@ -89,3 +89,8 @@ func ConvertTimeToTbilisi(timeStr, userTZ string) (time.Time, error) {
 
 	return userTime.In(tbilisiLoc), nil
 }
+
+func IsValidTimezone(name string) bool {
+	_, err := time.LoadLocation(name)
+	return err == nil
+}

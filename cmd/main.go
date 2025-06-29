@@ -32,6 +32,7 @@ func main() {
 		tgbotapi.BotAPIDeps{
 			Config:         cfg,
 			PillDayService: pillDayService,
+			UserService:    userService,
 		},
 	)
 
