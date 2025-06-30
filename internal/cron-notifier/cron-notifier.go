@@ -15,38 +15,42 @@ import (
 const repeatedNotificationCron = "*/20 * * * *"
 
 type Notifier interface {
-	SendMessage(chatId int64, message string)
+	SendMessage(chatID int64, message string)
 }
 
-type CronNotifier struct {
+type NotifierService struct {
 	cron    *cron.Cron
 	cronIDs map[int64]cron.EntryID
 	subIDs  map[int64]cron.EntryID
-	deps    NotifierDeps
+	deps    NotifierParams
 }
 
-type NotifierDeps struct {
+type NotifierParams struct {
 	PillDayService *service.PillDayService
 	Timezone       string
 	Notifier       Notifier
 }
 
-func NewCronNotifier(deps NotifierDeps) (*CronNotifier, error) {
-	loc, err := time.LoadLocation(deps.Timezone)
+func NewCronNotifier(params NotifierParams) (*NotifierService, error) {
+	loc, err := time.LoadLocation(params.Timezone)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &CronNotifier{
+	return &NotifierService{
 		cron:    cron.New(cron.WithLocation(loc)),
 		cronIDs: make(map[int64]cron.EntryID),
 		subIDs:  make(map[int64]cron.EntryID),
-		deps:    deps,
+		deps:    params,
 	}, nil
 }
 
-func (n *CronNotifier) sendRepeatedReminder(chatId int64) {
+func (n *NotifierService) SetNotifier(notifier Notifier) {
+	n.deps.Notifier = notifier
+}
+
+func (n *NotifierService) sendRepeatedReminder(chatId int64) {
 	n.deps.Notifier.SendMessage(chatId, utils.GetI18nMessage("firstNotification"))
 
 	subID, _ := n.cron.AddFunc(repeatedNotificationCron, func() {
@@ -66,7 +70,7 @@ func (n *CronNotifier) sendRepeatedReminder(chatId int64) {
 	n.subIDs[chatId] = subID
 }
 
-func (n *CronNotifier) reminderFn(chatId int64) func() {
+func (n *NotifierService) reminderFn(chatId int64) func() {
 	return func() {
 		taken, err := n.deps.PillDayService.IsTakenToday(chatId)
 		if err != nil {
@@ -79,7 +83,7 @@ func (n *CronNotifier) reminderFn(chatId int64) func() {
 	}
 }
 
-func (n *CronNotifier) AddOrUpdateCron(chatId int64, time time.Time) error {
+func (n *NotifierService) AddOrUpdateCron(chatId int64, time time.Time) error {
 	if oldID, ok := n.cronIDs[chatId]; ok {
 		n.cron.Remove(oldID)
 		slog.Info(fmt.Sprintf("Cron with ID: %d was removed", oldID))
@@ -98,11 +102,11 @@ func (n *CronNotifier) AddOrUpdateCron(chatId int64, time time.Time) error {
 	return nil
 }
 
-func (n *CronNotifier) GetCronExpFromTime(t time.Time) string {
+func (n *NotifierService) GetCronExpFromTime(t time.Time) string {
 	return fmt.Sprintf("%d %d * * *", t.Minute(), t.Hour())
 }
 
-func (n *CronNotifier) Start(users []model.User) {
+func (n *NotifierService) Start(users []model.User) {
 	for _, user := range users {
 		timeToNotify, err := utils.ConvertTimeToTbilisi(user.TimeToNotify, user.Timezone)
 		if err != nil {

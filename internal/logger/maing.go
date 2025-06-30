@@ -66,6 +66,5 @@ func Init() {
 	logger := slog.New(&SimpleHandler{w: os.Stdout})
 	slog.SetDefault(logger)
 
-	slog.Info("server started")
-	slog.Error("failed to connect", "err", fmt.Errorf("timeout"))
+	slog.Info("Logger init")
 }
