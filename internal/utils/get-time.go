@@ -4,16 +4,6 @@ import (
 	"time"
 )
 
-type GetDateTimeFromOptions struct {
-	Hours    *int
-	Timezone *string
-}
-
-type GetFormattedNowDateTimeOptions struct {
-	Timezone *string
-	Format   *string
-}
-
 var Timezone = "Asia/Tbilisi"
 
 func GetNowDateTime(timezone *string) time.Time {
@@ -37,35 +27,28 @@ func GetFormattedNowDate(timezone *string) string {
 	return GetNowDateTime(timezone).Format("2006-01-02")
 }
 
-func GetFormattedNowTime(timezone *string) string {
-	return GetNowDateTime(timezone).Format("15:04")
-}
-
-func GetFormattedNowDateTime(options GetFormattedNowDateTimeOptions) string {
-	return GetNowDateTime(options.Timezone).Format(*options.Format)
-}
-
-func GetDateTimeFrom(options GetDateTimeFromOptions) time.Time {
-	var timezone string
-
-	if options.Timezone == nil {
-		timezone = Timezone
-	} else {
-		timezone = *options.Timezone
+func GetTimeFromStringWithServerTimezone(timeStr string, timezone *string) time.Time {
+	if timezone == nil {
+		defaultTz := Timezone
+		timezone = &defaultTz
 	}
 
-	loc, err := time.LoadLocation(timezone)
+	loc, err := time.LoadLocation(*timezone)
 	if err != nil {
 		panic(err)
 	}
 
 	now := time.Now().In(loc)
 
+	parsed, err := time.ParseInLocation("15:04", timeStr, loc)
+	if err != nil {
+		panic(err)
+	}
+
 	return time.Date(
 		now.Year(), now.Month(), now.Day(),
-		*options.Hours, 0, 0, 0, loc,
+		parsed.Hour(), parsed.Minute(), 0, 0, loc,
 	)
-
 }
 
 func ConvertTimeToTbilisi(timeStr, userTZ string) (time.Time, error) {

@@ -23,9 +23,9 @@ func main() {
 
 	cronNotifier, err := cronnotifier.NewCronNotifier(
 		cronnotifier.NotifierDeps{
-			Config:         cfg,
+			Timezone:       cfg.TIMEZONE,
 			PillDayService: pillDayService,
-			UserService:    userService,
+			Notifier:       tgbotapi.TgNotifier{},
 		},
 	)
 
@@ -33,13 +33,20 @@ func main() {
 		slog.Error(err.Error())
 	}
 
-	cronNotifier.Start()
+	users, err := userService.GetAll()
+
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	cronNotifier.Start(users)
 
 	tgbotapi.RegisterMessageListener(
 		tgbotapi.BotAPIDeps{
 			Config:         cfg,
 			PillDayService: pillDayService,
 			UserService:    userService,
+			CronNotifier:   cronNotifier,
 		},
 	)
 

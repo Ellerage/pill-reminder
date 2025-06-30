@@ -4,6 +4,7 @@ import (
 	"log"
 	"log/slog"
 	"pill-reminder/configs"
+	cronnotifier "pill-reminder/internal/cron-notifier"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/service"
 	"pill-reminder/internal/utils"
@@ -14,9 +15,16 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+type TgNotifier struct{}
+
+func (TgNotifier) SendMessage(chatId int64, message string) {
+	SendMessage(chatId, message)
+}
+
 type BotAPIDeps struct {
 	PillDayService *service.PillDayService
 	UserService    *service.UserService
+	CronNotifier   *cronnotifier.CronNotifier
 	Config         *configs.Config
 }
 
@@ -37,6 +45,21 @@ func Init(token string) {
 	})
 }
 
+func RegisterMessageListener(deps BotAPIDeps) {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates := bot.GetUpdatesChan(u)
+
+	log.Println("Listening for new messages...")
+
+	for update := range updates {
+		if update.Message != nil {
+			handleMessage(deps, update.Message)
+		}
+	}
+}
+
 func SendMessage(chatId int64, message string) {
 	msg := tgbotapi.NewMessage(chatId, message)
 
@@ -52,21 +75,6 @@ func SendMessage(chatId int64, message string) {
 
 	if err != nil {
 		slog.Error(err.Error())
-	}
-}
-
-func RegisterMessageListener(deps BotAPIDeps) {
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates := bot.GetUpdatesChan(u)
-
-	log.Println("Listening for new messages...")
-
-	for update := range updates {
-		if update.Message != nil {
-			handleMessage(deps, update.Message)
-		}
 	}
 }
 
@@ -101,12 +109,24 @@ func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
 
 		idleStatus := string(enums.UserStatusIdle)
 
-		if timeRegex.MatchString(message.Text) {
-			deps.UserService.Update(chatId, model.UserUpdate{TimeToNotify: &message.Text, Status: &idleStatus})
+		isTime := timeRegex.MatchString(message.Text)
+		isTimezone := utils.IsValidTimezone(message.Text)
+
+		if isTime || isTimezone {
+			var toUpdate = model.UserUpdate{Status: &idleStatus}
+
+			parsedTime := utils.GetTimeFromStringWithServerTimezone(message.Text, &user.Timezone)
+
+			if isTime {
+				toUpdate.TimeToNotify = &parsedTime
+			} else if isTimezone {
+				toUpdate.Timezone = &message.Text
+			}
+
+			deps.UserService.Update(chatId, toUpdate)
+			deps.CronNotifier.AddOrUpdateCron(chatId, parsedTime)
+
 			SendMessage(chatId, "Time was updated!")
-		} else if utils.IsValidTimezone(message.Text) {
-			deps.UserService.Update(chatId, model.UserUpdate{Timezone: &message.Text, Status: &idleStatus})
-			SendMessage(chatId, "Timezone was updated!")
 		} else {
 			SendMessage(chatId, "Not valid time or timezone")
 		}
@@ -136,5 +156,4 @@ func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
 
 		return
 	}
-
 }
