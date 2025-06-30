@@ -3,6 +3,7 @@ package enums
 type Actions string
 
 const (
-	Take Actions = "Take"
-	Edit Actions = "Edit"
+	ActionTake   Actions = "Take"
+	ActionEdit   Actions = "Edit"
+	ActionCreate Actions = "/start"
 )

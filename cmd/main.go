@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"pill-reminder/configs"
 	cronnotifier "pill-reminder/internal/cron-notifier"
 	"pill-reminder/internal/db"
@@ -20,13 +21,19 @@ func main() {
 	userRepo := repository.NewUserRepo(db)
 	userService := service.NewUserService(userRepo)
 
-	cronnotifier.RegisterCronNotifier(
+	cronNotifier, err := cronnotifier.NewCronNotifier(
 		cronnotifier.NotifierDeps{
 			Config:         cfg,
 			PillDayService: pillDayService,
 			UserService:    userService,
 		},
 	)
+
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	cronNotifier.Start()
 
 	tgbotapi.RegisterMessageListener(
 		tgbotapi.BotAPIDeps{

@@ -13,68 +13,113 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
+const repeatedNotificationCron = "*/20 * * * *"
+
+type CronNotifier struct {
+	cron     *cron.Cron
+	cronIDs  map[int64]cron.EntryID
+	subIDs   map[int64]cron.EntryID
+	deps     NotifierDeps
+	timezone *time.Location
+}
+
 type NotifierDeps struct {
 	PillDayService *service.PillDayService
 	UserService    *service.UserService
 	Config         *configs.Config
 }
 
-var repeatedNotificationCron = "*/20 * * * *"
+func NewCronNotifier(deps NotifierDeps) (*CronNotifier, error) {
+	loc, err := time.LoadLocation(deps.Config.TIMEZONE)
+	if err != nil {
+		return nil, err
+	}
 
-var c *cron.Cron
-var subCronId cron.EntryID
+	return &CronNotifier{
+		cron:     cron.New(cron.WithLocation(loc)),
+		cronIDs:  make(map[int64]cron.EntryID),
+		subIDs:   make(map[int64]cron.EntryID),
+		deps:     deps,
+		timezone: loc,
+	}, nil
+}
 
-func sendRepeatedReminder(deps NotifierDeps, chatId int64) {
+func (n *CronNotifier) sendRepeatedReminder(chatId int64) {
 	tgbotapi.SendMessage(chatId, utils.GetI18nMessage("firstNotification"))
 
-	subCronId, _ = c.AddFunc(repeatedNotificationCron, func() {
-		isTakenToday, err := deps.PillDayService.IsTakenToday(chatId)
+	subID, _ := n.cron.AddFunc(repeatedNotificationCron, func() {
+		isTakenToday, err := n.deps.PillDayService.IsTakenToday(chatId)
 
 		if err != nil {
 			slog.Error(err.Error())
+			return
 		}
-
 		if isTakenToday {
-			c.Remove(subCronId)
+			n.cron.Remove(n.subIDs[chatId])
 		} else {
 			tgbotapi.SendMessage(chatId, utils.GetI18nMessage("reminderNotification"))
 		}
 	})
+
+	n.subIDs[chatId] = subID
 }
 
-func ReminderNotification(deps NotifierDeps, chatId int64) func() {
+func (n *CronNotifier) reminderFn(chatId int64) func() {
 	return func() {
-		if taken, _ := deps.PillDayService.IsTakenToday(chatId); !taken {
-			sendRepeatedReminder(deps, chatId)
+		taken, err := n.deps.PillDayService.IsTakenToday(chatId)
+		if err != nil {
+			slog.Error(err.Error())
+			return
+		}
+		if !taken {
+			n.sendRepeatedReminder(chatId)
 		}
 	}
 }
 
-func RegisterCronNotifier(deps NotifierDeps) {
-	users, err := deps.UserService.GetAll()
-
-	if err != nil {
-		log.Println(err)
+func (n *CronNotifier) AddOrUpdateCron(chatId int64, time time.Time) (cron.EntryID, string, error) {
+	if oldID, ok := n.cronIDs[chatId]; ok {
+		n.cron.Remove(oldID)
 	}
 
-	loc, _ := time.LoadLocation(deps.Config.TIMEZONE)
-	c = cron.New(cron.WithLocation(loc))
+	cronStr := n.GetCronExpFromTime(time)
+	id, err := n.cron.AddFunc(cronStr, n.reminderFn(chatId))
+	if err != nil {
+		return 0, "", err
+	}
+
+	n.cronIDs[chatId] = id
+
+	return id, cronStr, nil
+}
+
+func (n *CronNotifier) GetCronExpFromTime(t time.Time) string {
+	return fmt.Sprintf("%d %d * * *", t.Minute(), t.Hour())
+}
+
+func (n *CronNotifier) Start() {
+	users, err := n.deps.UserService.GetAll()
+	if err != nil {
+		log.Println("Failed to fetch users:", err)
+		return
+	}
 
 	for _, user := range users {
 		timeToNotify, err := utils.ConvertTimeToTbilisi(user.TimeToNotify, user.Timezone)
-
 		if err != nil {
 			slog.Error("Error creating cron", "error", err)
+			continue
 		}
 
-		cronStr := fmt.Sprintf("%d %d * * *", timeToNotify.Minute(), timeToNotify.Hour())
+		_, cronExp, err := n.AddOrUpdateCron(user.ChatId, timeToNotify)
+		if err != nil {
+			slog.Error("Failed to add cron", "chatId", user.ChatId, "error", err)
+			continue
+		}
 
-		c.AddFunc(cronStr, ReminderNotification(deps, user.ChatId))
-
-		slog.Info(fmt.Sprintf("Created Cron for chatId %d, at time %s", user.ChatId, cronStr))
+		slog.Info("Created cron", "chatId", user.ChatId, "cron", cronExp)
 	}
 
-	c.Start()
-
+	n.cron.Start()
 	log.Println("Cron started")
 }

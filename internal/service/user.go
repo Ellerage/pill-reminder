@@ -1,8 +1,11 @@
 package service
 
 import (
+	"errors"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/repository"
+
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type UserService struct {
@@ -22,7 +25,13 @@ func (s *UserService) GetByChatId(chatId int64) (model.User, error) {
 }
 
 func (s *UserService) Create(toCreate model.User) error {
-	return s.userRepo.Create(toCreate)
+	_, err := s.userRepo.GetByChatId(toCreate.ChatId)
+
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return s.userRepo.Create(toCreate)
+	}
+
+	return err
 }
 
 func (s *UserService) Update(chatId int64, toUpdate model.UserUpdate) error {

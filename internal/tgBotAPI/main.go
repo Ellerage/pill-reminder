@@ -42,8 +42,8 @@ func SendMessage(chatId int64, message string) {
 
 	replyKeyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(string(enums.Take)),
-			tgbotapi.NewKeyboardButton(string(enums.Edit)),
+			tgbotapi.NewKeyboardButton(string(enums.ActionTake)),
+			tgbotapi.NewKeyboardButton(string(enums.ActionEdit)),
 		),
 	)
 	msg.ReplyMarkup = replyKeyboard
@@ -73,13 +73,30 @@ func RegisterMessageListener(deps BotAPIDeps) {
 func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
 	var chatId = message.Chat.ID
 
+	if message.Text == string(enums.ActionCreate) {
+		err := deps.UserService.Create(model.User{
+			ChatId:       chatId,
+			Timezone:     deps.Config.TIMEZONE,
+			TimeToNotify: "00:00",
+			Status:       string(enums.UserStatusInactive),
+		})
+
+		if err != nil {
+			slog.Error(err.Error())
+		} else {
+			SendMessage(chatId, "What's time you want to get reminders? Type it in 15:04 format")
+		}
+
+		return
+	}
+
 	user, err := deps.UserService.GetByChatId(chatId)
 
 	if err != nil {
 		slog.Error(err.Error())
 	}
 
-	if user.Status == string(enums.UserStatusEditing) {
+	if user.Status == string(enums.UserStatusEditing) || user.Status == string(enums.UserStatusInactive) {
 		timeRegex := regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
 
 		idleStatus := string(enums.UserStatusIdle)
@@ -98,7 +115,7 @@ func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
 	}
 
 	if user.Status == string(enums.UserStatusIdle) {
-		if message.Text == string(enums.Take) {
+		if message.Text == string(enums.ActionTake) {
 			err := deps.PillDayService.MarkAsTakenNow(message.Chat.ID)
 
 			if err != nil {
@@ -110,7 +127,7 @@ func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
 			SendMessage(chatId, "Checked!")
 		}
 
-		if message.Text == string(enums.Edit) {
+		if message.Text == string(enums.ActionEdit) {
 			status := string(enums.UserStatusEditing)
 			deps.UserService.Update(chatId, model.UserUpdate{Status: &status})
 
