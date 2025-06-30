@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 type User struct {
 	ChatId       int64  `bson:"chatId"`
 	Timezone     string `bson:"timezone"`
@@ -10,7 +8,7 @@ type User struct {
 }
 
 type UserUpdate struct {
-	Timezone     *string    `bson:"timezone,omitempty"`
-	TimeToNotify *time.Time `bson:"timeToNotify,omitempty"`
-	Status       *string    `bson:"status,omitempty"`
+	Timezone     *string `bson:"timezone,omitempty"`
+	TimeToNotify *string `bson:"timeToNotify,omitempty"`
+	Status       *string `bson:"status,omitempty"`
 }

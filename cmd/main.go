@@ -5,6 +5,7 @@ import (
 	"pill-reminder/configs"
 	cronnotifier "pill-reminder/internal/cron-notifier"
 	"pill-reminder/internal/db"
+	"pill-reminder/internal/logger"
 	"pill-reminder/internal/repository"
 	"pill-reminder/internal/service"
 	tgbotapi "pill-reminder/internal/tgBotAPI"
@@ -14,6 +15,8 @@ func main() {
 	cfg := configs.InitConfig()
 	db := db.Connect(db.ConnectMongoOptions{Uri: cfg.MONGO_URL, DBName: cfg.MONGO_DB_NAME})
 	tgbotapi.Init(cfg.BOT_TOKEN)
+
+	logger.Init()
 
 	pillDayRepo := repository.NewPillDayRepo(db)
 	pillDayService := service.NewPillDayService(pillDayRepo)

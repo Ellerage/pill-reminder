@@ -116,9 +116,10 @@ func handleMessage(deps BotAPIDeps, message *tgbotapi.Message) {
 			var toUpdate = model.UserUpdate{Status: &idleStatus}
 
 			parsedTime := utils.GetTimeFromStringWithServerTimezone(message.Text, &user.Timezone)
+			timeToNotify := parsedTime.Format("15:04")
 
 			if isTime {
-				toUpdate.TimeToNotify = &parsedTime
+				toUpdate.TimeToNotify = &timeToNotify
 			} else if isTimezone {
 				toUpdate.Timezone = &message.Text
 			}
