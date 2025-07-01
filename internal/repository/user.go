@@ -28,7 +28,7 @@ func (repo *UserRepo) GetAll() ([]model.User, error) {
 		return nil, err
 	}
 
-	var users []model.User
+	users := make([]model.User, 0)
 
 	if err := cursor.All(ctx, &users); err != nil {
 		return nil, err
