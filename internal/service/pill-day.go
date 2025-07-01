@@ -3,18 +3,24 @@ package service
 import (
 	"errors"
 	"log/slog"
-	"pill-reminder/internal/repository"
+	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type PillDayService struct {
-	pillDayRepo *repository.PillDayRepo
+type PillDayRepository interface {
+	Create(chatId int64, time *time.Time) error
+	GetByDateAndChatId(chatID int64, date time.Time) (*model.PillDay, error)
+	UpdateTimeByDate(chatID int64, dateTime time.Time) error
 }
 
-func NewPillDayService(repo *repository.PillDayRepo) *PillDayService {
+type PillDayService struct {
+	pillDayRepo PillDayRepository
+}
+
+func NewPillDayService(repo PillDayRepository) *PillDayService {
 	return &PillDayService{pillDayRepo: repo}
 }
 

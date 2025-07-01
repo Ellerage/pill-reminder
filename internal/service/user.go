@@ -3,16 +3,22 @@ package service
 import (
 	"errors"
 	"pill-reminder/internal/model"
-	"pill-reminder/internal/repository"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type UserService struct {
-	userRepo *repository.UserRepo
+type UserRepository interface {
+	GetAll() ([]model.User, error)
+	GetByChatId(int64) (model.User, error)
+	Create(model.User) error
+	Update(int64, model.UserUpdate) error
 }
 
-func NewUserService(repo *repository.UserRepo) *UserService {
+type UserService struct {
+	userRepo UserRepository
+}
+
+func NewUserService(repo UserRepository) *UserService {
 	return &UserService{userRepo: repo}
 }
 
