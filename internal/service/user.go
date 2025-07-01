@@ -9,7 +9,7 @@ import (
 
 type UserRepository interface {
 	GetAll() ([]model.User, error)
-	GetByChatId(int64) (model.User, error)
+	GetByChatId(int64) (*model.User, error)
 	Create(model.User) error
 	Update(int64, model.UserUpdate) error
 }
@@ -26,7 +26,7 @@ func (s *UserService) GetAll() ([]model.User, error) {
 	return s.userRepo.GetAll()
 }
 
-func (s *UserService) GetByChatId(chatId int64) (model.User, error) {
+func (s *UserService) GetByChatId(chatId int64) (*model.User, error) {
 	return s.userRepo.GetByChatId(chatId)
 }
 
@@ -35,9 +35,11 @@ func (s *UserService) Create(toCreate model.User) error {
 
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return s.userRepo.Create(toCreate)
+	} else if err != nil {
+		return err
+	} else {
+		return errors.New("user already exist")
 	}
-
-	return err
 }
 
 func (s *UserService) Update(chatId int64, toUpdate model.UserUpdate) error {

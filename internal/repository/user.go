@@ -37,15 +37,19 @@ func (repo *UserRepo) GetAll() ([]model.User, error) {
 	return users, nil
 }
 
-func (repo *UserRepo) GetByChatId(chatId int64) (model.User, error) {
+func (repo *UserRepo) GetByChatId(chatId int64) (*model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var user model.User
+	var user *model.User
 
 	err := repo.db.Collection("users").FindOne(ctx, bson.M{"chatId": chatId}).Decode(&user)
 
-	return user, err
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (repo *UserRepo) Create(toCreate model.User) error {
