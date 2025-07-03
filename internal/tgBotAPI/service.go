@@ -4,19 +4,11 @@ import (
 	"log"
 	"log/slog"
 	cronnotifier "pill-reminder/internal/cron-notifier"
-	"pill-reminder/internal/model"
 	"pill-reminder/internal/service"
-	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
-	"regexp"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
-
-type BotAPI interface {
-	Send(tg.Chattable) (tg.Message, error)
-	GetUpdatesChan(config tg.UpdateConfig) tg.UpdatesChannel
-}
 
 type BotService struct {
 	timezone       string
@@ -70,86 +62,5 @@ func (b *BotService) SendMessage(chatID int64, message string) {
 
 	if _, err := b.api.Send(msg); err != nil {
 		slog.Error("Send message", "err", err)
-	}
-}
-
-func (b *BotService) handleMessage(message *tg.Message) {
-	chatId := message.Chat.ID
-
-	if message.Text == string(enums.ActionCreate) {
-		err := b.userService.Create(model.User{
-			ChatId:       chatId,
-			Timezone:     b.timezone,
-			TimeToNotify: "00:00",
-			Status:       string(enums.UserStatusInactive),
-		})
-
-		if err != nil {
-			slog.Error(err.Error())
-		} else {
-			b.SendMessage(chatId, "What's time you want to get reminders? Type it in 15:04 format")
-		}
-
-		return
-	}
-
-	user, err := b.userService.GetByChatId(chatId)
-
-	if err != nil {
-		slog.Error(err.Error())
-	}
-
-	if user.Status == string(enums.UserStatusEditing) || user.Status == string(enums.UserStatusInactive) {
-		timeRegex := regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
-
-		idleStatus := string(enums.UserStatusIdle)
-
-		isTime := timeRegex.MatchString(message.Text)
-		isTimezone := utils.IsValidTimezone(message.Text)
-
-		if isTime || isTimezone {
-			var toUpdate = model.UserUpdate{Status: &idleStatus}
-
-			parsedTime := utils.GetTimeFromStringWithServerTimezone(message.Text, &user.Timezone)
-			timeToNotify := parsedTime.Format("15:04")
-
-			if isTime {
-				toUpdate.TimeToNotify = &timeToNotify
-			} else if isTimezone {
-				toUpdate.Timezone = &message.Text
-			}
-
-			b.userService.Update(chatId, toUpdate)
-			b.cronNotifier.AddOrUpdateCron(chatId, parsedTime)
-
-			b.SendMessage(chatId, "Time was updated!")
-		} else {
-			b.SendMessage(chatId, "Not valid time or timezone")
-		}
-
-		return
-	}
-
-	if user.Status == string(enums.UserStatusIdle) {
-		if message.Text == string(enums.ActionTake) {
-			err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
-
-			if err != nil {
-				slog.Error(err.Error())
-				b.SendMessage(chatId, "Try again")
-				return
-			}
-
-			b.SendMessage(chatId, "Checked!")
-		}
-
-		if message.Text == string(enums.ActionEdit) {
-			status := string(enums.UserStatusEditing)
-			b.userService.Update(chatId, model.UserUpdate{Status: &status})
-
-			b.SendMessage(chatId, "Enter new time to get notified - 15:04 format")
-		}
-
-		return
 	}
 }
