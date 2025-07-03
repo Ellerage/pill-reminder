@@ -4,8 +4,8 @@ bot:
 test:
 	go test ./... -cover 
 
-build:
-	go build -o pill-reminder ./cmd
+build_prod:
+	GOOS=linux GOARCH=amd64 go build -o pill-reminder ./cmd
 
 # default
 run: bot
