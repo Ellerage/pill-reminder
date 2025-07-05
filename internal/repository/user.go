@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils/enums"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -22,7 +23,11 @@ func (repo *UserRepo) GetAll() ([]model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := repo.db.Collection("users").Find(ctx, bson.M{})
+	cursor, err := repo.db.Collection("users").Find(ctx, bson.M{
+		"status": bson.M{
+			"$ne": string(enums.UserStatusInactive),
+		},
+	})
 
 	if err != nil {
 		return nil, err
