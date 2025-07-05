@@ -6,17 +6,16 @@ import (
 	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
 	"regexp"
+	"strconv"
+	"time"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func (b *BotService) handleUserCreate(chatId int64) {
-	err := b.userService.Create(model.User{
-		ChatId:       chatId,
-		Timezone:     b.timezone,
-		TimeToNotify: "00:00",
-		Status:       string(enums.UserStatusInactive),
-	})
+	var u model.UserCreate
+
+	err := b.userService.Create(chatId, u.GetDefaultUser(b.timezone))
 
 	if err != nil {
 		slog.Error(err.Error())
@@ -25,17 +24,37 @@ func (b *BotService) handleUserCreate(chatId int64) {
 	}
 }
 
-func (b *BotService) handleTimeEditing(message *tg.Message, timezone *string) {
+func (b *BotService) handleTimeEditing(message *tg.Message, timezone *string, userTimeToNotify string, userRepeatInterval string) {
 	timeRegex := regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
 
 	idleStatus := string(enums.UserStatusIdle)
+	var toUpdate = model.UserUpdate{Status: &idleStatus}
 
 	isTime := timeRegex.MatchString(message.Text)
 	isTimezone := utils.IsValidTimezone(message.Text)
+	minutes, parseErr := strconv.ParseUint(message.Text, 10, 8)
+
+	timeToNotify, err := time.Parse("15:04", userTimeToNotify)
+
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	if parseErr == nil {
+		if minutes <= 60 {
+			remindInterval := uint8(minutes)
+
+			b.userService.Update(message.Chat.ID, toUpdate)
+			b.cronNotifier.AddOrUpdateCron(message.Chat.ID, timeToNotify, utils.GetCronFromMinutes(remindInterval))
+			b.SendMessage(message.Chat.ID, "Repeat time was updated!")
+			return
+		} else {
+			b.SendMessage(message.Chat.ID, "Should be less that 60 minutes")
+			return
+		}
+	}
 
 	if isTime || isTimezone {
-		var toUpdate = model.UserUpdate{Status: &idleStatus}
-
 		parsedTime := utils.GetTimeFromStringWithServerTimezone(message.Text, timezone)
 		timeToNotify := parsedTime.Format("15:04")
 
@@ -46,7 +65,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, timezone *string) {
 		}
 
 		b.userService.Update(message.Chat.ID, toUpdate)
-		b.cronNotifier.AddOrUpdateCron(message.Chat.ID, parsedTime)
+		b.cronNotifier.AddOrUpdateCron(message.Chat.ID, parsedTime, userRepeatInterval)
 
 		b.SendMessage(message.Chat.ID, "Time was updated!")
 	} else {
@@ -90,7 +109,7 @@ func (b *BotService) handleMessage(message *tg.Message) {
 	}
 
 	if user.Status == string(enums.UserStatusEditing) || user.Status == string(enums.UserStatusInactive) {
-		b.handleTimeEditing(message, &user.Timezone)
+		b.handleTimeEditing(message, &user.Timezone, user.TimeToNotify, user.RemindInterval)
 
 		return
 	}
