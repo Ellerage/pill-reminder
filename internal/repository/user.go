@@ -83,6 +83,10 @@ func (repo *UserRepo) Update(chatId int64, toUpdate model.UserUpdate) error {
 		set["timeToNotify"] = *toUpdate.TimeToNotify
 	}
 
+	if toUpdate.RemindInterval != nil {
+		set["remindInterval"] = *toUpdate.RemindInterval
+	}
+
 	_, err := repo.db.Collection("users").UpdateOne(ctx, bson.M{"chatId": chatId}, bson.M{"$set": set})
 
 	if err != nil {

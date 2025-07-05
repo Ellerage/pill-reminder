@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
 	"testing"
 
@@ -82,12 +83,33 @@ func TestUserService_Create_Success(t *testing.T) {
 
 	fakeUser := generateFakeUser()
 
-	mockRepo.On("GetByChatId", fakeUser.ChatId).Return(nil, mongo.ErrNoDocuments).Once()
-	mockRepo.On("Create", mock.MatchedBy(func(u model.User) bool {
-		return u.ChatId == fakeUser.ChatId
-	})).Return(nil).Once()
+	chatId := fakeUser.ChatId
+	toCreate := model.UserCreate{
+		Timezone:       fakeUser.Timezone,
+		TimeToNotify:   fakeUser.TimeToNotify,
+		Status:         fakeUser.Status,
+		RemindInterval: gofakeit.Uint8(),
+	}
 
-	err := svc.Create(fakeUser)
+	expectedUser := model.User{
+		ChatId:         chatId,
+		Timezone:       toCreate.Timezone,
+		TimeToNotify:   toCreate.TimeToNotify,
+		Status:         toCreate.Status,
+		RemindInterval: utils.GetCronFromMinutes(toCreate.RemindInterval),
+	}
+
+	mockRepo.
+		On("GetByChatId", chatId).
+		Return(nil, mongo.ErrNoDocuments).
+		Once()
+
+	mockRepo.
+		On("Create", expectedUser).
+		Return(nil).
+		Once()
+
+	err := svc.Create(chatId, toCreate)
 
 	assert.NoError(t, err)
 
@@ -166,7 +188,14 @@ func TestUserService_Create_Error(t *testing.T) {
 
 	mockRepo.On("GetByChatId", fakeUser.ChatId).Return(&fakeUser, nil).Once()
 
-	err := svc.Create(fakeUser)
+	toCreate := model.UserCreate{
+		Timezone:       fakeUser.Timezone,
+		TimeToNotify:   fakeUser.TimeToNotify,
+		Status:         fakeUser.Status,
+		RemindInterval: gofakeit.Uint8(),
+	}
+
+	err := svc.Create(fakeUser.ChatId, toCreate)
 
 	expectedError := errors.New("user already exist")
 
