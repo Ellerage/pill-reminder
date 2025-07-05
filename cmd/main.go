@@ -6,6 +6,7 @@ import (
 	"pill-reminder/configs"
 	cronnotifier "pill-reminder/internal/cron-notifier"
 	"pill-reminder/internal/db"
+	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/logger"
 	"pill-reminder/internal/repository"
 	"pill-reminder/internal/service"
@@ -21,6 +22,8 @@ func main() {
 		Uri:    cfg.MONGO_URL,
 		DBName: cfg.MONGO_DB_NAME,
 	})
+
+	i18n.Init()
 
 	pillDayService := service.NewPillDayService(repository.NewPillDayRepo(mongo))
 	userService := service.NewUserService(repository.NewUserRepo(mongo))

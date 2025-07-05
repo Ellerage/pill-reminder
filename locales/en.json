@@ -1,0 +1,42 @@
+[
+  {
+    "id": "tryAgain",
+    "translation": "Try again"
+  },
+  {
+    "id": "initialTime",
+    "translation": "⏰ What time should I send you reminders? Format: 15:04 (HH:MM)"
+  },
+  {
+    "id": "shouldBeLessOneHour",
+    "translation": "Should be less that 60 minutes"
+  },
+  {
+    "id": "repeatIntervalTimeUpdated",
+    "translation": "Repeat time was updated 🕑"
+  },
+  {
+    "id": "firstAtDayNotificationTimeUpdated",
+    "translation": "Time was updated 🕑"
+  },
+  {
+    "id": "notValidTime",
+    "translation": "Not valid time or timezone"
+  },
+  {
+    "id": "checked",
+    "translation": "Checked ✅"
+  },
+  {
+    "id": "enterNewTime",
+    "translation": "Enter new time to get notification 🕑"
+  },
+  {
+    "id": "firstNotification",
+    "translation": "It's time to take your pill 🔔"
+  },
+  {
+    "id": "reminderNotification",
+    "translation": "It's a notification to remind you about your pill"
+  }
+]

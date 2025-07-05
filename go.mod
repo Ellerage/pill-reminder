@@ -44,6 +44,7 @@ require (
 	github.com/moby/term v0.5.0 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/nicksnyder/go-i18n/v2 v2.6.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -75,10 +76,11 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/robfig/cron/v3 v3.0.1
 	go.mongodb.org/mongo-driver/v2 v2.2.2
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )
