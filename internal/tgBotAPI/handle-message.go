@@ -2,6 +2,7 @@ package tgbotapi
 
 import (
 	"log/slog"
+	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
@@ -20,7 +21,7 @@ func (b *BotService) handleUserCreate(chatId int64) {
 	if err != nil {
 		slog.Error(err.Error())
 	} else {
-		b.SendMessage(chatId, "What's time you want to get reminders? Type it in 15:04 format")
+		b.SendMessage(chatId, i18n.GetText("initialTime"))
 	}
 }
 
@@ -46,10 +47,10 @@ func (b *BotService) handleTimeEditing(message *tg.Message, timezone *string, us
 
 			b.userService.Update(message.Chat.ID, toUpdate)
 			b.cronNotifier.AddOrUpdateCron(message.Chat.ID, timeToNotify, utils.GetCronFromMinutes(remindInterval))
-			b.SendMessage(message.Chat.ID, "Repeat time was updated!")
+			b.SendMessage(message.Chat.ID, i18n.GetText("repeatIntervalTimeUpdated"))
 			return
 		} else {
-			b.SendMessage(message.Chat.ID, "Should be less that 60 minutes")
+			b.SendMessage(message.Chat.ID, i18n.GetText("shouldBeLessOneHour"))
 			return
 		}
 	}
@@ -67,9 +68,9 @@ func (b *BotService) handleTimeEditing(message *tg.Message, timezone *string, us
 		b.userService.Update(message.Chat.ID, toUpdate)
 		b.cronNotifier.AddOrUpdateCron(message.Chat.ID, parsedTime, userRepeatInterval)
 
-		b.SendMessage(message.Chat.ID, "Time was updated!")
+		b.SendMessage(message.Chat.ID, i18n.GetText("firstAtDayNotificationTimeUpdated"))
 	} else {
-		b.SendMessage(message.Chat.ID, "Not valid time or timezone")
+		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"))
 	}
 }
 
@@ -79,18 +80,18 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 
 		if err != nil {
 			slog.Error(err.Error())
-			b.SendMessage(message.Chat.ID, "Try again")
+			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"))
 			return
 		}
 
-		b.SendMessage(message.Chat.ID, "Checked!")
+		b.SendMessage(message.Chat.ID, i18n.GetText("checked"))
 	}
 
 	if message.Text == string(enums.ActionEdit) {
 		status := string(enums.UserStatusEditing)
 		b.userService.Update(message.Chat.ID, model.UserUpdate{Status: &status})
 
-		b.SendMessage(message.Chat.ID, "Enter new time to get notified - 15:04 format")
+		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"))
 	}
 }
 

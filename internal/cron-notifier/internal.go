@@ -3,7 +3,7 @@ package cronnotifier
 import (
 	"fmt"
 	"log/slog"
-	"pill-reminder/internal/utils"
+	"pill-reminder/internal/i18n"
 )
 
 func (n *NotifierService) reminderFn(chatId int64, repeatCronExp string) func() {
@@ -15,7 +15,7 @@ func (n *NotifierService) reminderFn(chatId int64, repeatCronExp string) func() 
 		}
 
 		if !taken {
-			n.deps.Notifier.SendMessage(chatId, utils.GetI18nMessage("firstNotification"))
+			n.deps.Notifier.SendMessage(chatId, i18n.GetText("firstNotification"))
 
 			subID, err := n.cron.AddFunc(repeatCronExp, func() {
 				isTakenToday, err := n.deps.PillDayService.IsTakenToday(chatId)
@@ -27,7 +27,7 @@ func (n *NotifierService) reminderFn(chatId int64, repeatCronExp string) func() 
 				if isTakenToday {
 					n.cron.Remove(n.subIDs[chatId])
 				} else {
-					n.deps.Notifier.SendMessage(chatId, utils.GetI18nMessage("reminderNotification"))
+					n.deps.Notifier.SendMessage(chatId, i18n.GetText("reminderNotification"))
 				}
 			})
 
