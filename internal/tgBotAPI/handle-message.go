@@ -21,7 +21,7 @@ func (b *BotService) handleUserCreate(chatId int64) {
 	if err != nil {
 		slog.Error(err.Error())
 	} else {
-		b.SendMessage(chatId, i18n.GetText("initialTime"))
+		b.SendMessage(chatId, i18n.GetText("initialTime"), nil)
 	}
 }
 
@@ -47,10 +47,10 @@ func (b *BotService) handleTimeEditing(message *tg.Message, timezone *string, us
 
 			b.userService.Update(message.Chat.ID, toUpdate)
 			b.cronNotifier.AddOrUpdateCron(message.Chat.ID, timeToNotify, utils.GetCronFromMinutes(remindInterval))
-			b.SendMessage(message.Chat.ID, i18n.GetText("repeatIntervalTimeUpdated"))
+			b.SendMessage(message.Chat.ID, i18n.GetText("repeatIntervalTimeUpdated"), &enums.SendMessageButtons{Take: true, Edit: true})
 			return
 		} else {
-			b.SendMessage(message.Chat.ID, i18n.GetText("shouldBeLessOneHour"))
+			b.SendMessage(message.Chat.ID, i18n.GetText("shouldBeLessOneHour"), nil)
 			return
 		}
 	}
@@ -68,9 +68,9 @@ func (b *BotService) handleTimeEditing(message *tg.Message, timezone *string, us
 		b.userService.Update(message.Chat.ID, toUpdate)
 		b.cronNotifier.AddOrUpdateCron(message.Chat.ID, parsedTime, userRepeatInterval)
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("firstAtDayNotificationTimeUpdated"))
+		b.SendMessage(message.Chat.ID, i18n.GetText("firstAtDayNotificationTimeUpdated"), &enums.SendMessageButtons{Take: true, Edit: true})
 	} else {
-		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"))
+		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"), nil)
 	}
 }
 
@@ -80,18 +80,18 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 
 		if err != nil {
 			slog.Error(err.Error())
-			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"))
+			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"), &enums.SendMessageButtons{Take: true, Edit: true})
 			return
 		}
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("checked"))
+		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true})
 	}
 
 	if message.Text == string(enums.ActionEdit) {
 		status := string(enums.UserStatusEditing)
 		b.userService.Update(message.Chat.ID, model.UserUpdate{Status: &status})
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"))
+		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true})
 	}
 }
 

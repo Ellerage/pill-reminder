@@ -2,13 +2,14 @@ package cronnotifier
 
 import (
 	"pill-reminder/internal/service"
+	"pill-reminder/internal/utils/enums"
 	"time"
 
 	"github.com/robfig/cron/v3"
 )
 
 type Notifier interface {
-	SendMessage(chatID int64, message string)
+	SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons)
 }
 
 type NotifierService struct {

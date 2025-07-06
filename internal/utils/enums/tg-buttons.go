@@ -7,3 +7,8 @@ const (
 	ActionEdit   Actions = "Edit"
 	ActionCreate Actions = "/start"
 )
+
+type SendMessageButtons struct {
+	Take bool
+	Edit bool
+}

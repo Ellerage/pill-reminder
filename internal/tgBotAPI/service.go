@@ -51,14 +51,27 @@ func (b *BotService) RegisterMessageListener() {
 	}
 }
 
-func (b *BotService) SendMessage(chatID int64, message string) {
+func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons) {
 	msg := tg.NewMessage(chatID, message)
-	msg.ReplyMarkup = tg.NewReplyKeyboard(
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton(string(enums.ActionTake)),
-			tg.NewKeyboardButton(string(enums.ActionEdit)),
-		),
-	)
+	replyButtons := make([]tg.KeyboardButton, 0, 2)
+
+	if buttons != nil {
+		if buttons.Take {
+			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionTake)))
+
+		}
+		if buttons.Edit {
+			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionEdit)))
+		}
+	}
+
+	if len(replyButtons) > 0 {
+		msg.ReplyMarkup = tg.NewReplyKeyboard(
+			tg.NewKeyboardButtonRow(
+				replyButtons...,
+			),
+		)
+	}
 
 	if _, err := b.api.Send(msg); err != nil {
 		slog.Error("Send message", "err", err)
