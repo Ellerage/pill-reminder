@@ -8,13 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type UserRepository interface {
-	GetAll() ([]model.User, error)
-	GetByChatId(int64) (*model.User, error)
-	Create(model.User) error
-	Update(int64, model.UserUpdate) error
-}
-
 type UserService struct {
 	userRepo UserRepository
 }
