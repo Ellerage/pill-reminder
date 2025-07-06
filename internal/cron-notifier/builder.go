@@ -1,7 +1,6 @@
 package cronnotifier
 
 import (
-	"pill-reminder/internal/service"
 	"pill-reminder/internal/utils/enums"
 	"time"
 
@@ -12,6 +11,10 @@ type Notifier interface {
 	SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons)
 }
 
+type PillDayService interface {
+	IsTakenToday(chatID int64) (bool, error)
+}
+
 type NotifierService struct {
 	cron    *cron.Cron
 	cronIDs map[int64]cron.EntryID
@@ -20,7 +23,7 @@ type NotifierService struct {
 }
 
 type NotifierParams struct {
-	PillDayService *service.PillDayService
+	PillDayService PillDayService
 	Timezone       string
 	Notifier       Notifier
 }
