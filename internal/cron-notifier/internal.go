@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
+	"pill-reminder/internal/utils/enums"
 )
 
 func (n *NotifierService) reminderFn(chatId int64, repeatCronExp string) func() {
@@ -15,7 +16,11 @@ func (n *NotifierService) reminderFn(chatId int64, repeatCronExp string) func() 
 		}
 
 		if !taken {
-			n.deps.Notifier.SendMessage(chatId, i18n.GetText("firstNotification"))
+			n.deps.Notifier.SendMessage(
+				chatId,
+				i18n.GetText("firstNotification"),
+				&enums.SendMessageButtons{Take: true, Edit: true},
+			)
 
 			subID, err := n.cron.AddFunc(repeatCronExp, func() {
 				isTakenToday, err := n.deps.PillDayService.IsTakenToday(chatId)
@@ -27,7 +32,11 @@ func (n *NotifierService) reminderFn(chatId int64, repeatCronExp string) func() 
 				if isTakenToday {
 					n.cron.Remove(n.subIDs[chatId])
 				} else {
-					n.deps.Notifier.SendMessage(chatId, i18n.GetText("reminderNotification"))
+					n.deps.Notifier.SendMessage(
+						chatId,
+						i18n.GetText("reminderNotification"),
+						&enums.SendMessageButtons{Take: true, Edit: true},
+					)
 				}
 			})
 
