@@ -22,7 +22,7 @@ func (s *PillDayService) Create(chatId int64, timeOfTaking *time.Time) error {
 }
 
 func (s *PillDayService) MarkAsTakenNow(chatId int64) error {
-	dateTime := utils.GetNowDateTime(nil)
+	dateTime := utils.GetNowDateTime()
 
 	_, err := s.pillDayRepo.GetByDateAndChatId(chatId, dateTime)
 
@@ -40,7 +40,7 @@ func (s *PillDayService) MarkAsTakenNow(chatId int64) error {
 }
 
 func (s *PillDayService) IsTakenToday(chatId int64) (bool, error) {
-	date := utils.GetNowDateTime(nil)
+	date := utils.GetNowDateTime()
 
 	pillDay, err := s.pillDayRepo.GetByDateAndChatId(chatId, date)
 

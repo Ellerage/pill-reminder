@@ -1,18 +1,15 @@
 package utils
 
 import (
+	"log/slog"
 	"time"
+	_ "time/tzdata"
 )
 
-var Timezone = "Asia/Tbilisi"
+const TimezoneDefault = "UTC"
 
-func GetNowDateTime(timezone *string) time.Time {
-	if timezone == nil {
-		defaultTz := Timezone
-		timezone = &defaultTz
-	}
-
-	loc, err := time.LoadLocation(*timezone)
+func GetNowDateTime() time.Time {
+	loc, err := time.LoadLocation(TimezoneDefault)
 
 	if err != nil {
 		panic(err)
@@ -23,54 +20,46 @@ func GetNowDateTime(timezone *string) time.Time {
 	return now
 }
 
-func GetFormattedNowDate(timezone *string) string {
-	return GetNowDateTime(timezone).Format("2006-01-02")
+func GetFormattedNowDate() string {
+	return GetNowDateTime().Format("2006-01-02")
 }
 
-func GetTimeFromStringWithServerTimezone(timeStr string, timezone *string) time.Time {
-	if timezone == nil {
-		defaultTz := Timezone
-		timezone = &defaultTz
+func GetUTCFromUserTime(timeStr string, userTimeZone *string) string {
+	var timezone string
+
+	if userTimeZone != nil {
+		timezone = *userTimeZone
+	} else {
+		timezone = TimezoneDefault
 	}
 
-	loc, err := time.LoadLocation(*timezone)
+	loc, err := time.LoadLocation(timezone)
 	if err != nil {
-		panic(err)
+		slog.Error(err.Error())
 	}
 
 	now := time.Now().In(loc)
+	parsed, err := time.Parse("15:04", timeStr)
 
-	parsed, err := time.ParseInLocation("15:04", timeStr, loc)
 	if err != nil {
-		panic(err)
+		slog.Error(err.Error())
 	}
 
 	return time.Date(
 		now.Year(), now.Month(), now.Day(),
-		parsed.Hour(), parsed.Minute(), 0, 0, loc,
-	)
+		parsed.Hour(), parsed.Minute(), 0, 0,
+		loc,
+	).UTC().Format("15:04")
 }
 
-func ConvertTimeToTbilisi(timeStr, userTZ string) (time.Time, error) {
-	userLoc, err := time.LoadLocation(userTZ)
+func GetTimeFromString(str string) time.Time {
+	parsed, err := time.Parse("15:04", str)
+
 	if err != nil {
-		return time.Time{}, err
-	}
-	tbilisiLoc, err := time.LoadLocation(Timezone)
-	if err != nil {
-		return time.Time{}, err
+		slog.Error(err.Error())
 	}
 
-	now := time.Now().In(userLoc)
-	parsed, err := time.ParseInLocation("15:04", timeStr, userLoc)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	userTime := time.Date(now.Year(), now.Month(), now.Day(),
-		parsed.Hour(), parsed.Minute(), 0, 0, userLoc)
-
-	return userTime.In(tbilisiLoc), nil
+	return parsed
 }
 
 func IsValidTimezone(name string) bool {
