@@ -2,7 +2,6 @@ package tgbotapi
 
 import (
 	"pill-reminder/internal/model"
-	"time"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -23,5 +22,5 @@ type PillDayService interface {
 }
 
 type CronNotifier interface {
-	AddOrUpdateCron(chatId int64, time time.Time, repeatCronStr string) error
+	AddOrUpdateCron(chatId int64, time string, repeatCronStr string) error
 }

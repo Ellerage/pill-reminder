@@ -49,7 +49,7 @@ func (repo *PillDayRepo) Create(chatId int64, timeOfTaking *time.Time) error {
 		formattedTime = nil
 	}
 
-	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(nil), TimeOfTaking: formattedTime, ChatId: chatId}
+	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(), TimeOfTaking: formattedTime, ChatId: chatId}
 
 	_, err := repo.db.Collection("pill-day").InsertOne(ctx, pillDay)
 

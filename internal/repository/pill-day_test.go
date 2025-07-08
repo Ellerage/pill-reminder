@@ -45,7 +45,7 @@ func TestPillDay_Create(t *testing.T) {
 
 	chatId := gofakeit.Int64()
 	timeOfTaking := gofakeit.Date()
-	nowDate := utils.GetFormattedNowDate(nil)
+	nowDate := utils.GetFormattedNowDate()
 
 	formattedTime := timeOfTaking.Format("15:04")
 
@@ -72,7 +72,7 @@ func TestPillDayRepo_UpdateTimeByDate(t *testing.T) {
 
 	fakePillDay := generatePillDay()
 
-	now := utils.GetNowDateTime(nil)
+	now := utils.GetNowDateTime()
 	time := gofakeit.Date().Format("15:04")
 
 	_, err := pillDayColl.InsertOne(context.Background(), model.PillDay{

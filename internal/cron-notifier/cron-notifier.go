@@ -6,10 +6,11 @@ import (
 	"log/slog"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
-	"time"
 )
 
-func (n *NotifierService) AddOrUpdateCron(chatId int64, time time.Time, repeatCronExp string) error {
+func (n *NotifierService) AddOrUpdateCron(chatId int64, timeStr string, repeatCronExp string) error {
+	time := utils.GetTimeFromString(timeStr)
+
 	if oldID, ok := n.cronIDs[chatId]; ok {
 		n.cron.Remove(oldID)
 		slog.Info(fmt.Sprintf("Cron with ID: %d was removed", oldID))
@@ -30,13 +31,7 @@ func (n *NotifierService) AddOrUpdateCron(chatId int64, time time.Time, repeatCr
 
 func (n *NotifierService) Start(users []model.User) {
 	for _, user := range users {
-		timeToNotify, err := utils.ConvertTimeToTbilisi(user.TimeToNotify, user.Timezone)
-		if err != nil {
-			slog.Error("Error creating cron", "error", err)
-			continue
-		}
-
-		if err := n.AddOrUpdateCron(user.ChatId, timeToNotify, user.RemindInterval); err != nil {
+		if err := n.AddOrUpdateCron(user.ChatId, user.TimeToNotify, user.RemindInterval); err != nil {
 			slog.Error("Failed to add cron", "chatId", user.ChatId, "error", err)
 			continue
 		}
