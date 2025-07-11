@@ -1,6 +1,7 @@
 package tgbotapi
 
 import (
+	"context"
 	"log"
 	"log/slog"
 	"pill-reminder/internal/utils/enums"
@@ -13,7 +14,7 @@ type BotService struct {
 	api            BotAPI
 	userService    UserService
 	pillDayService PillDayService
-	cronNotifier   CronNotifier
+	reminderQueue  ReminderQueue
 }
 
 type BotServiceParams struct {
@@ -21,7 +22,7 @@ type BotServiceParams struct {
 	API            BotAPI
 	UserService    UserService
 	PillDayService PillDayService
-	CronNotifier   CronNotifier
+	ReminderQueue  ReminderQueue
 }
 
 func NewBotService(params BotServiceParams) *BotService {
@@ -30,11 +31,11 @@ func NewBotService(params BotServiceParams) *BotService {
 		api:            params.API,
 		userService:    params.UserService,
 		pillDayService: params.PillDayService,
-		cronNotifier:   params.CronNotifier,
+		reminderQueue:  params.ReminderQueue,
 	}
 }
 
-func (b *BotService) RegisterMessageListener() {
+func (b *BotService) RegisterMessageListener(ctx context.Context) {
 	u := tg.NewUpdate(0)
 	u.Timeout = 60
 
@@ -42,10 +43,17 @@ func (b *BotService) RegisterMessageListener() {
 
 	log.Println("Listening for new messages...")
 
-	for update := range updates {
-		if update.Message != nil {
-			b.handleMessage(update.Message)
+	for {
+		select {
+		case update := <-updates:
+			if update.Message != nil {
+				b.handleMessage(update.Message)
+			}
+		case <-ctx.Done():
+			slog.Info("Bot listener stopped")
+			return
 		}
+
 	}
 }
 

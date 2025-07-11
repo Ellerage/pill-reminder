@@ -18,5 +18,8 @@ type UserRepository interface {
 	Update(int64, model.UserUpdate) error
 }
 
-type ReminderCronRepository interface {
+type ReminderQueueRepository interface {
+	GetAll(filters *model.GetAllFilters) []model.QueueReminder
+	Create(chatId int64, cronId string, notificationType string) error
+	DeleteByChatId(chatId int64, filters model.DeleteFilters) (int64, error)
 }

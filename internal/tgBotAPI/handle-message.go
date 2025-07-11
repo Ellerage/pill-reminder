@@ -1,102 +1,23 @@
 package tgbotapi
 
 import (
+	"fmt"
 	"log/slog"
-	"pill-reminder/internal/i18n"
-	"pill-reminder/internal/model"
-	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
-	"regexp"
-	"strconv"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type HandleTimeEditing struct {
-	userTimezone       *string
-	userTimeToNotify   string
-	userRepeatInterval string
-}
-
-func (b *BotService) handleUserCreate(chatId int64) {
-	var u model.UserCreate
-
-	err := b.userService.Create(chatId, u.GetDefaultUser(b.timezone))
-
-	if err != nil {
-		slog.Error(err.Error())
-	} else {
-		b.SendMessage(chatId, i18n.GetText("initialTime"), nil)
-	}
-}
-
-func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeEditing) {
-	timeRegex := regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
-
-	idleStatus := string(enums.UserStatusIdle)
-	var toUpdate = model.UserUpdate{Status: &idleStatus}
-	timeToNotify := userData.userTimeToNotify
-
-	isTime := timeRegex.MatchString(message.Text)
-	isTimezone := utils.IsValidTimezone(message.Text)
-	minutes, intParseError := strconv.ParseUint(message.Text, 10, 8)
-	isMinutes := intParseError == nil
-
-	if !isMinutes && !isTime && !isTimezone {
-		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"), nil)
-		return
-	}
-
-	if isMinutes {
-		remindInterval := uint8(minutes)
-		cronStr := utils.GetCronFromMinutes(remindInterval)
-
-		toUpdate.RemindInterval = &cronStr
-
-		b.userService.Update(message.Chat.ID, toUpdate)
-		b.cronNotifier.AddOrUpdateCron(message.Chat.ID, userData.userTimeToNotify, cronStr)
-		b.SendMessage(message.Chat.ID, i18n.GetText("repeatIntervalTimeUpdated"), &enums.SendMessageButtons{Take: true, Edit: true})
-		return
-	}
-
-	if isTime {
-		timeToNotify = utils.GetUTCFromUserTime(message.Text, userData.userTimezone)
-		toUpdate.TimeToNotify = &timeToNotify
-	}
-
-	if isTimezone {
-		toUpdate.Timezone = &message.Text
-	}
-
-	b.userService.Update(message.Chat.ID, toUpdate)
-	b.cronNotifier.AddOrUpdateCron(message.Chat.ID, timeToNotify, userData.userRepeatInterval)
-
-	b.SendMessage(message.Chat.ID, i18n.GetText("firstAtDayNotificationTimeUpdated"), &enums.SendMessageButtons{Take: true, Edit: true})
-}
-
-func (b *BotService) handleIdleMessages(message *tg.Message) {
-	if message.Text == string(enums.ActionTake) {
-		err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
-
-		if err != nil {
-			slog.Error(err.Error())
-			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"), &enums.SendMessageButtons{Take: true, Edit: true})
-			return
-		}
-
-		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true})
-	}
-
-	if message.Text == string(enums.ActionEdit) {
-		status := string(enums.UserStatusEditing)
-		b.userService.Update(message.Chat.ID, model.UserUpdate{Status: &status})
-
-		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true})
-	}
+	UserTimezone       *string
+	UserTimeToNotify   string
+	UserRepeatInterval string
 }
 
 func (b *BotService) handleMessage(message *tg.Message) {
 	chatId := message.Chat.ID
+
+	slog.Info(fmt.Sprintf("Got Message from: %d", chatId))
 
 	if message.Text == string(enums.ActionCreate) {
 		b.handleUserCreate(chatId)
@@ -110,7 +31,7 @@ func (b *BotService) handleMessage(message *tg.Message) {
 	}
 
 	if user.Status == string(enums.UserStatusEditing) || user.Status == string(enums.UserStatusInactive) {
-		b.handleTimeEditing(message, &user.Timezone, user.TimeToNotify, user.RemindInterval)
+		b.handleTimeEditing(message, HandleTimeEditing{UserTimezone: &user.Timezone, UserTimeToNotify: user.TimeToNotify, UserRepeatInterval: user.RemindInterval})
 
 		return
 	}

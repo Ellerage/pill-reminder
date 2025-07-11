@@ -21,6 +21,7 @@ type PillDayService interface {
 	MarkAsTakenNow(chatId int64) error
 }
 
-type CronNotifier interface {
-	AddOrUpdateCron(chatId int64, time string, repeatCronStr string) error
+type ReminderQueue interface {
+	Register(chatId int64, cron string, repeatCronStr string)
+	RemoveByChatId(chatId int64, onlyFollowUp bool)
 }

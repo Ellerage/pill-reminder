@@ -1,3 +1,4 @@
 .env
 .env-prod
 pill-reminder
+dump.rdb
