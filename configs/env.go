@@ -16,8 +16,9 @@ type Config struct {
 	TIMEZONE       string `env:"TIMEZONE" env-default:""`
 	REDIS_URL      string `env:"REDIS_URL" env-default:""`
 	REDIS_PASSWORD string `env:"REDIS_PASSWORD" env-default:""`
-	REDIS_DB       int    `env:"REDIS_DB" env-default:""`
+	ASYNCQ_DB      int    `env:"ASYNCQ_DB" env-default:""`
 	REDIS_PORT     int    `env:"REDIS_PORT" env-default:""`
+	REMINDER_DB    int    `env:"REMINDER_DB" env-default:""`
 }
 
 var (

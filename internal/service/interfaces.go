@@ -19,7 +19,8 @@ type UserRepository interface {
 }
 
 type ReminderQueueRepository interface {
-	GetAll(filters *model.GetAllFilters) []model.QueueReminder
-	Create(chatId int64, cronId string, notificationType string) error
-	DeleteByChatId(chatId int64, filters model.DeleteFilters) (int64, error)
+	GetFollowupCronIdByChatId(chatId int64) string
+	GetCronIdByChatId(chatId int64) (string, string, error)
+	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
+	DeleteByChatId(chatId int64, onlyFollowup bool) (int64, error)
 }

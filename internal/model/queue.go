@@ -1,9 +1,9 @@
 package model
 
 type QueueReminder struct {
-	ChatId       int64  `bson:"chatId"`
-	CronId       string `bson:"cronId"`
-	ReminderType string `bson:"type"` // Daily, Followup
+	ChatId       int64
+	CronId       string
+	ReminderType string // Daily, Followup
 }
 
 type DailyReminderPayload struct {
@@ -15,7 +15,7 @@ type FollowUpReminderPayload struct {
 	ChatId int64
 }
 
-type GetAllFilters struct {
+type GetAllQueueReminderFilters struct {
 	ChatId       *int64
 	ReminderType *string
 }

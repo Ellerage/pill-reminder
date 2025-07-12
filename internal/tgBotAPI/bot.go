@@ -10,28 +10,31 @@ import (
 )
 
 type BotService struct {
-	timezone       string
-	api            BotAPI
-	userService    UserService
-	pillDayService PillDayService
-	reminderQueue  ReminderQueue
+	timezone        string
+	api             BotAPI
+	userService     UserService
+	pillDayService  PillDayService
+	reminderService ReminderService
+	reminderQueue   ReminderQueue
 }
 
 type BotServiceParams struct {
-	Timezone       string
-	API            BotAPI
-	UserService    UserService
-	PillDayService PillDayService
-	ReminderQueue  ReminderQueue
+	Timezone        string
+	API             BotAPI
+	UserService     UserService
+	PillDayService  PillDayService
+	ReminderService ReminderService
+	ReminderQueue   ReminderQueue
 }
 
 func NewBotService(params BotServiceParams) *BotService {
 	return &BotService{
-		timezone:       params.Timezone,
-		api:            params.API,
-		userService:    params.UserService,
-		pillDayService: params.PillDayService,
-		reminderQueue:  params.ReminderQueue,
+		timezone:        params.Timezone,
+		api:             params.API,
+		userService:     params.UserService,
+		pillDayService:  params.PillDayService,
+		reminderQueue:   params.ReminderQueue,
+		reminderService: params.ReminderService,
 	}
 }
 

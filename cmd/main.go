@@ -29,15 +29,22 @@ func main() {
 	cfg := configs.InitConfig()
 	logger.Init()
 	i18n.Init()
-	mongo := db.Connect(db.ConnectMongoOptions{
+	mongo := db.ConnectMongo(db.ConnectMongoOptions{
 		Uri:    cfg.MONGO_URL,
 		DBName: cfg.MONGO_DB_NAME,
+	})
+
+	redis := db.ConnectRedis(ctx, db.ConnectRedisOptions{
+		Addr:     cfg.REDIS_URL,
+		Port:     cfg.REDIS_PORT,
+		Password: cfg.REDIS_PASSWORD,
+		DB:       cfg.REMINDER_DB,
 	})
 
 	// Services
 	pillDayService := service.NewPillDayService(repository.NewPillDayRepo(mongo))
 	userService := service.NewUserService(repository.NewUserRepo(mongo))
-	reminderQueueService := service.NewReminderQueueService(repository.NewQueueRepository(mongo))
+	reminderQueueService := service.NewReminderQueueService(repository.NewQueueRepository(redis))
 
 	reminderQueue := reminderqueue.NewReminderQueue(
 		reminderqueue.ReminderQueueDeps{
@@ -46,7 +53,7 @@ func main() {
 				RedisAddr: cfg.REDIS_URL,
 				RedisPort: cfg.REDIS_PORT,
 				RedisPwd:  cfg.REDIS_PASSWORD,
-				RedisDB:   cfg.REDIS_DB,
+				RedisDB:   cfg.ASYNCQ_DB,
 			},
 		},
 	)
@@ -64,11 +71,12 @@ func main() {
 	botAPI.Debug = false
 
 	botService := tgbotapi.NewBotService(tgbotapi.BotServiceParams{
-		Timezone:       cfg.TIMEZONE,
-		API:            botAPI,
-		UserService:    userService,
-		PillDayService: pillDayService,
-		ReminderQueue:  reminderQueue,
+		Timezone:        cfg.TIMEZONE,
+		API:             botAPI,
+		UserService:     userService,
+		PillDayService:  pillDayService,
+		ReminderQueue:   reminderQueue,
+		ReminderService: reminderQueueService,
 	})
 
 	// Initialize schedule for users

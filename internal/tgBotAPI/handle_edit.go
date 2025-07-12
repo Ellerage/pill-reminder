@@ -19,6 +19,8 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	idleStatus := string(enums.UserStatusIdle)
 	var toUpdate = model.UserUpdate{Status: &idleStatus}
 	timeToNotify := userData.UserTimeToNotify
+	remindIntervalCron := userData.UserRepeatInterval
+	messageToSend := ""
 
 	isTime := timeRegex.MatchString(message.Text)
 	isTimezone := utils.IsValidTimezone(message.Text)
@@ -32,34 +34,44 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 
 	if isMinutes {
 		remindInterval := uint8(minutes)
-		cronStr := utils.GetCronFromMinutes(remindInterval)
+		remindIntervalCron = utils.GetCronFromMinutes(remindInterval)
 
-		slog.Info(fmt.Sprintf("User - %d changes remind interval", message.Chat.ID))
-
-		toUpdate.RemindInterval = &cronStr
-
-		b.userService.Update(message.Chat.ID, toUpdate)
-
-		b.reminderQueue.Register(message.Chat.ID, utils.GetDailyCronFromStringTime(userData.UserTimeToNotify), cronStr)
-		b.SendMessage(message.Chat.ID, i18n.GetText("repeatIntervalTimeUpdated"), &enums.SendMessageButtons{Take: true, Edit: true})
-		return
-	}
-
-	if isTime {
+		toUpdate.RemindInterval = &remindIntervalCron
+		messageToSend = i18n.GetText("repeatIntervalTimeUpdated")
+	} else if isTime {
 		slog.Info(fmt.Sprintf("User - %d changes time to notify", message.Chat.ID))
 
 		timeToNotify = utils.GetUTCFromUserTime(message.Text, userData.UserTimezone)
 		toUpdate.TimeToNotify = &timeToNotify
-	}
-
-	if isTimezone {
+		messageToSend = i18n.GetText("firstAtDayNotificationTimeUpdated")
+	} else if isTimezone {
 		slog.Info(fmt.Sprintf("User - %d changes timezone", message.Chat.ID))
 
 		toUpdate.Timezone = &message.Text
+		messageToSend = i18n.GetText("timezoneWasChanged")
+	}
+
+	dailyCronId, followUpCronId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)
+	if err == nil {
+		if dailyCronId != "" {
+			b.reminderQueue.Unregister(dailyCronId)
+		}
+
+		if followUpCronId != "" {
+			b.reminderQueue.Unregister(followUpCronId)
+		}
+	} else {
+		slog.Error(err.Error())
 	}
 
 	b.userService.Update(message.Chat.ID, toUpdate)
-	b.reminderQueue.Register(message.Chat.ID, utils.GetDailyCronFromStringTime(timeToNotify), userData.UserRepeatInterval)
 
-	b.SendMessage(message.Chat.ID, i18n.GetText("firstAtDayNotificationTimeUpdated"), &enums.SendMessageButtons{Take: true, Edit: true})
+	cronId, cronRegisterErr := b.reminderQueue.Register(message.Chat.ID, utils.GetDailyCronFromStringTime(timeToNotify), remindIntervalCron)
+
+	if cronRegisterErr != nil {
+		slog.Error(cronRegisterErr.Error())
+	}
+
+	b.reminderService.CreateOrUpdate(message.Chat.ID, cronId, "Daily")
+	b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true})
 }

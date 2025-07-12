@@ -31,7 +31,7 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 			slog.Error(err.Error())
 		}
 
-		errCreating := deps.reminderQueueService.Create(payload.ChatId, cronId, "Followup")
+		errCreating := deps.reminderQueueService.CreateOrUpdate(payload.ChatId, cronId, "Followup")
 
 		if errCreating != nil {
 			slog.Error(errCreating.Error())

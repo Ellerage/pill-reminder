@@ -11,9 +11,7 @@ import (
 )
 
 type ReminderQueueService interface {
-	Create(chatId int64, cronId string, reminderType string) error
-	GetAll(filters *model.GetAllFilters) []model.QueueReminder
-	DeleteByChatId(chatId int64, filters model.DeleteFilters) (int64, error)
+	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
 }
 
 type RedisConnectionOptions struct {
@@ -84,15 +82,13 @@ func (q *ReminderQueue) Start(users []model.User) {
 			slog.Error(err.Error())
 		}
 
-		q.deps.ReminderQueueService.Create(user.ChatId, id, "Daily")
+		q.deps.ReminderQueueService.CreateOrUpdate(user.ChatId, id, "Daily")
 
 		slog.Info(fmt.Sprintf("ChatId: %d, CronId: %s, CronStr: %s", user.ChatId, id, cronStr))
 	}
 }
 
-func (q *ReminderQueue) Register(chatId int64, cron string, remindInterval string) {
-	q.RemoveByChatId(chatId, false)
-
+func (q *ReminderQueue) Register(chatId int64, cron string, remindInterval string) (string, error) {
 	data, err := json.Marshal(model.DailyReminderPayload{ChatId: chatId, RemindInterval: remindInterval})
 	if err != nil {
 		slog.Error(fmt.Sprintf("json.Marshal failed: %v", err))
@@ -104,32 +100,17 @@ func (q *ReminderQueue) Register(chatId int64, cron string, remindInterval strin
 	}
 
 	slog.Info(fmt.Sprintf("ChatId: %d, CronId: %s, CronStr: %s", chatId, id, cron))
+
+	return id, registerError
 }
 
-func (q *ReminderQueue) RemoveByChatId(chatId int64, onlyFollowUp bool) {
-	var filters model.GetAllFilters
-	var deleteFilters model.DeleteFilters
-
-	filters.ChatId = &chatId
-
-	if onlyFollowUp {
-		TypeFollowup := "Followup"
-		filters.ReminderType = &TypeFollowup
-		deleteFilters.ReminderType = &TypeFollowup
+func (q *ReminderQueue) Unregister(cronId string) error {
+	err := q.Scheduler.Unregister(cronId)
+	if err != nil {
+		slog.Info(err.Error())
 	}
 
-	crons := q.deps.ReminderQueueService.GetAll(&filters)
+	slog.Info(fmt.Sprintf("Cron ID: %s - was removed", cronId))
 
-	for _, cron := range crons {
-		err := q.Scheduler.Unregister(cron.CronId)
-
-		if err != nil {
-			slog.Info(err.Error())
-			continue
-		}
-
-		slog.Info(fmt.Sprintf("Cron ID: %s - was removed", cron.CronId))
-	}
-
-	q.deps.ReminderQueueService.DeleteByChatId(chatId, deleteFilters)
+	return nil
 }
