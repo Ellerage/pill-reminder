@@ -47,6 +47,9 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	} else if isTimezone {
 		slog.Info("Changes timezone", "ChatId:", message.Chat.ID)
 
+		timeToNotify = utils.GetUTCFromUserTime(userData.UserTimeToNotify, &message.Text)
+
+		toUpdate.TimeToNotify = &timeToNotify
 		toUpdate.Timezone = &message.Text
 		messageToSend = i18n.GetText("timezoneWasChanged")
 	}
