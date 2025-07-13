@@ -15,7 +15,7 @@ type ConnectMongoOptions struct {
 	DBName string
 }
 
-func Connect(connectOptions ConnectMongoOptions) *mongo.Database {
+func ConnectMongo(connectOptions ConnectMongoOptions) *mongo.Database {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(connectOptions.Uri).SetServerAPIOptions(serverAPI)
 

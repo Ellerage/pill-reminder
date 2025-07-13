@@ -1,6 +1,7 @@
 package tgbotapi
 
 import (
+	"context"
 	"log"
 	"log/slog"
 	"pill-reminder/internal/utils/enums"
@@ -9,32 +10,35 @@ import (
 )
 
 type BotService struct {
-	timezone       string
-	api            BotAPI
-	userService    UserService
-	pillDayService PillDayService
-	cronNotifier   CronNotifier
+	timezone        string
+	api             BotAPI
+	userService     UserService
+	pillDayService  PillDayService
+	reminderService ReminderService
+	reminderQueue   ReminderQueue
 }
 
 type BotServiceParams struct {
-	Timezone       string
-	API            BotAPI
-	UserService    UserService
-	PillDayService PillDayService
-	CronNotifier   CronNotifier
+	Timezone        string
+	API             BotAPI
+	UserService     UserService
+	PillDayService  PillDayService
+	ReminderService ReminderService
+	ReminderQueue   ReminderQueue
 }
 
 func NewBotService(params BotServiceParams) *BotService {
 	return &BotService{
-		timezone:       params.Timezone,
-		api:            params.API,
-		userService:    params.UserService,
-		pillDayService: params.PillDayService,
-		cronNotifier:   params.CronNotifier,
+		timezone:        params.Timezone,
+		api:             params.API,
+		userService:     params.UserService,
+		pillDayService:  params.PillDayService,
+		reminderQueue:   params.ReminderQueue,
+		reminderService: params.ReminderService,
 	}
 }
 
-func (b *BotService) RegisterMessageListener() {
+func (b *BotService) RegisterMessageListener(ctx context.Context) {
 	u := tg.NewUpdate(0)
 	u.Timeout = 60
 
@@ -42,10 +46,17 @@ func (b *BotService) RegisterMessageListener() {
 
 	log.Println("Listening for new messages...")
 
-	for update := range updates {
-		if update.Message != nil {
-			b.handleMessage(update.Message)
+	for {
+		select {
+		case update := <-updates:
+			if update.Message != nil {
+				b.handleMessage(update.Message)
+			}
+		case <-ctx.Done():
+			slog.Info("Bot listener stopped")
+			return
 		}
+
 	}
 }
 

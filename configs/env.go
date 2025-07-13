@@ -10,10 +10,15 @@ import (
 )
 
 type Config struct {
-	BOT_TOKEN     string `env:"BOT_TOKEN" env-default:""`
-	MONGO_URL     string `env:"MONGO_URL" env-default:""`
-	MONGO_DB_NAME string `env:"MONGO_DB_NAME" env-default:""`
-	TIMEZONE      string `env:"TIMEZONE" env-default:""`
+	BOT_TOKEN      string `env:"BOT_TOKEN" env-default:""`
+	MONGO_URL      string `env:"MONGO_URL" env-default:""`
+	MONGO_DB_NAME  string `env:"MONGO_DB_NAME" env-default:""`
+	TIMEZONE       string `env:"TIMEZONE" env-default:""`
+	REDIS_URL      string `env:"REDIS_URL" env-default:""`
+	REDIS_PASSWORD string `env:"REDIS_PASSWORD" env-default:""`
+	ASYNCQ_DB      int    `env:"ASYNCQ_DB" env-default:""`
+	REDIS_PORT     int    `env:"REDIS_PORT" env-default:""`
+	REMINDER_DB    int    `env:"REMINDER_DB" env-default:""`
 }
 
 var (

@@ -20,6 +20,10 @@
     "translation": "Time was updated 🕑"
   },
   {
+   "id": "timezoneWasChanged",
+    "translation": "Timezone was changed"
+  },
+  {
     "id": "notValidTime",
     "translation": "Not valid time or timezone"
   },
