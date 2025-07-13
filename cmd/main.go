@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -14,14 +13,14 @@ import (
 	"pill-reminder/internal/repository"
 	"pill-reminder/internal/schedulehandlers"
 	"pill-reminder/internal/service"
-	tgbotapi "pill-reminder/internal/tgBotAPI"
+	tgbot "pill-reminder/internal/tgbot"
 	"syscall"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func main() {
-	ctx, close := context.WithCancel(context.Background())
+	ctx, ctxClose := context.WithCancel(context.Background())
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
@@ -66,11 +65,12 @@ func main() {
 	// TG bot API
 	botAPI, err := tg.NewBotAPI(cfg.BOT_TOKEN)
 	if err != nil {
-		log.Fatalf("Failed to init bot: %v", err)
+		panic(err)
 	}
+
 	botAPI.Debug = false
 
-	botService := tgbotapi.NewBotService(tgbotapi.BotServiceParams{
+	botService := tgbot.NewBotService(tgbot.BotServiceParams{
 		Timezone:        cfg.TIMEZONE,
 		API:             botAPI,
 		UserService:     userService,
@@ -102,7 +102,13 @@ func main() {
 
 	// Schedule Event handlers
 	go func() {
-		err = schedulehandlers.RegisterHandlers(schedulehandlers.HandlersParams{Server: reminderQueue.Server, Scheduler: reminderQueue.Scheduler, ReminderQueueService: reminderQueueService, TgBot: botService})
+		err = schedulehandlers.RegisterHandlers(schedulehandlers.HandlersParams{
+			Server:               reminderQueue.Server,
+			Scheduler:            reminderQueue.Scheduler,
+			ReminderQueueService: reminderQueueService,
+			TgBot:                botService,
+		})
+
 		if err != nil {
 			panic(err)
 		}
@@ -111,7 +117,7 @@ func main() {
 	sig := <-sigCh
 	slog.Info("signal: " + sig.String())
 
-	defer close()
+	defer ctxClose()
 	reminderQueue.Scheduler.Shutdown()
 	reminderQueue.Server.Shutdown()
 	reminderQueue.Client.Close()

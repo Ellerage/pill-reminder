@@ -1,4 +1,4 @@
-package tgbotapi
+package tgbot
 
 import (
 	"log/slog"
