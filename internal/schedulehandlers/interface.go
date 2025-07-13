@@ -9,3 +9,7 @@ type ReminderQueueService interface {
 type TgBot interface {
 	SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons)
 }
+
+type PillDayService interface {
+	IsTakenToday(chatId int64) (bool, error)
+}

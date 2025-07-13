@@ -22,9 +22,14 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 		cronId := b.reminderService.GetFollowupCronIdByChatId(message.Chat.ID)
 
 		errRemoveByChatId := b.reminderQueue.Unregister(cronId)
-
 		if errRemoveByChatId != nil {
 			slog.Error(errRemoveByChatId.Error())
+		}
+
+		_, deleteErr := b.reminderService.DeleteByChatId(message.Chat.ID, true)
+
+		if deleteErr != nil {
+			slog.Error(deleteErr.Error())
 		}
 
 		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true})

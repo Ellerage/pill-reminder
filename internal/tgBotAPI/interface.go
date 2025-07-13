@@ -25,6 +25,7 @@ type ReminderService interface {
 	GetCronIdByChatId(chatId int64) (string, string, error)
 	GetFollowupCronIdByChatId(chatId int64) string
 	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
+	DeleteByChatId(chatId int64, onlyFollowUp bool) (int64, error)
 }
 
 type ReminderQueue interface {

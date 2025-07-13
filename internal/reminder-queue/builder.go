@@ -96,7 +96,7 @@ func (q *ReminderQueue) Register(chatId int64, cron string, remindInterval strin
 
 	id, registerError := q.Scheduler.Register(cron, asynq.NewTask("reminder:daily", data))
 	if registerError != nil {
-		slog.Error(err.Error())
+		return "", registerError
 	}
 
 	slog.Info(fmt.Sprintf("ChatId: %d, CronId: %s, CronStr: %s", chatId, id, cron))
@@ -107,7 +107,7 @@ func (q *ReminderQueue) Register(chatId int64, cron string, remindInterval strin
 func (q *ReminderQueue) Unregister(cronId string) error {
 	err := q.Scheduler.Unregister(cronId)
 	if err != nil {
-		slog.Info(err.Error())
+		return err
 	}
 
 	slog.Info(fmt.Sprintf("Cron ID: %s - was removed", cronId))

@@ -15,6 +15,7 @@ type DailyReminderHandler struct {
 	scheduler            *asynq.Scheduler
 	reminderQueueService ReminderQueueService
 	tgBot                TgBot
+	pillDayService       PillDayService
 }
 
 func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
@@ -23,6 +24,16 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 
 		if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 			slog.Error(err.Error())
+		}
+
+		isTaken, err := deps.pillDayService.IsTakenToday(payload.ChatId)
+
+		if err != nil {
+			slog.Error(err.Error())
+		}
+
+		if isTaken {
+			return nil
 		}
 
 		cronId, err := deps.scheduler.Register(payload.RemindInterval, asynq.NewTask("reminder:followup", t.Payload()))

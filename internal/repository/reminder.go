@@ -39,14 +39,13 @@ func (repo *ReminderQueueRepository) GetCronIdByChatId(chatId int64) (string, st
 }
 
 func (repo *ReminderQueueRepository) GetFollowupCronIdByChatId(chatId int64) string {
-	result := repo.db.Get(context.Background(), fmt.Sprintf("%d:Followup", chatId))
+	result, err := repo.db.Get(context.Background(), fmt.Sprintf("%d:Followup", chatId)).Result()
 
-	err := result.Err()
 	if err != nil {
 		slog.Error(err.Error())
 	}
 
-	return result.String()
+	return result
 }
 
 func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string, notificationType string) error {

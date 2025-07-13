@@ -12,7 +12,8 @@ import (
 )
 
 type FollowupHandler struct {
-	tgBot TgBot
+	tgBot          TgBot
+	pillDayService PillDayService
 }
 
 func makeFollowupReminderHandle(deps FollowupHandler) asynq.HandlerFunc {

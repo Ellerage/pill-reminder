@@ -1,7 +1,6 @@
 package tgbotapi
 
 import (
-	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
@@ -13,8 +12,9 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+var timeRegex = regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
+
 func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeEditing) {
-	timeRegex := regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
 
 	idleStatus := string(enums.UserStatusIdle)
 	var toUpdate = model.UserUpdate{Status: &idleStatus}
@@ -39,19 +39,20 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		toUpdate.RemindInterval = &remindIntervalCron
 		messageToSend = i18n.GetText("repeatIntervalTimeUpdated")
 	} else if isTime {
-		slog.Info(fmt.Sprintf("User - %d changes time to notify", message.Chat.ID))
+		slog.Info("Changed time to notify", "ChatId:", message.Chat.ID)
 
 		timeToNotify = utils.GetUTCFromUserTime(message.Text, userData.UserTimezone)
 		toUpdate.TimeToNotify = &timeToNotify
 		messageToSend = i18n.GetText("firstAtDayNotificationTimeUpdated")
 	} else if isTimezone {
-		slog.Info(fmt.Sprintf("User - %d changes timezone", message.Chat.ID))
+		slog.Info("Changes timezone", "ChatId:", message.Chat.ID)
 
 		toUpdate.Timezone = &message.Text
 		messageToSend = i18n.GetText("timezoneWasChanged")
 	}
 
 	dailyCronId, followUpCronId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)
+
 	if err == nil {
 		if dailyCronId != "" {
 			b.reminderQueue.Unregister(dailyCronId)
