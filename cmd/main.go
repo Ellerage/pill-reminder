@@ -88,7 +88,9 @@ func main() {
 	reminderQueue.Start(users)
 
 	go func() {
-		reminderQueue.Scheduler.Run()
+		if err := reminderQueue.Scheduler.Run(); err != nil {
+			panic(err)
+		}
 	}()
 
 	go func() {

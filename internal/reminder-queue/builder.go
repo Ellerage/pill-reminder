@@ -82,7 +82,9 @@ func (q *ReminderQueue) Start(users []model.User) {
 			slog.Error(err.Error())
 		}
 
-		q.deps.ReminderQueueService.CreateOrUpdate(user.ChatId, id, "Daily")
+		if err := q.deps.ReminderQueueService.CreateOrUpdate(user.ChatId, id, "Daily"); err != nil {
+			slog.Error(err.Error())
+		}
 
 		slog.Info(fmt.Sprintf("ChatId: %d, CronId: %s, CronStr: %s", user.ChatId, id, cronStr))
 	}

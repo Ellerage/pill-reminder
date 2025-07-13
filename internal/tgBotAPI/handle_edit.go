@@ -58,17 +58,23 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 
 	if err == nil {
 		if dailyCronId != "" {
-			b.reminderQueue.Unregister(dailyCronId)
+			if err := b.reminderQueue.Unregister(dailyCronId); err != nil {
+				slog.Error(err.Error())
+			}
 		}
 
 		if followUpCronId != "" {
-			b.reminderQueue.Unregister(followUpCronId)
+			if err := b.reminderQueue.Unregister(followUpCronId); err != nil {
+				slog.Error(err.Error())
+			}
 		}
 	} else {
 		slog.Error(err.Error())
 	}
 
-	b.userService.Update(message.Chat.ID, toUpdate)
+	if err := b.userService.Update(message.Chat.ID, toUpdate); err != nil {
+		slog.Error(err.Error())
+	}
 
 	cronId, cronRegisterErr := b.reminderQueue.Register(message.Chat.ID, utils.GetDailyCronFromStringTime(timeToNotify), remindIntervalCron)
 
@@ -76,6 +82,9 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		slog.Error(cronRegisterErr.Error())
 	}
 
-	b.reminderService.CreateOrUpdate(message.Chat.ID, cronId, "Daily")
+	if err := b.reminderService.CreateOrUpdate(message.Chat.ID, cronId, "Daily"); err != nil {
+		slog.Error(err.Error())
+	}
+
 	b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true})
 }
