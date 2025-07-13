@@ -7,5 +7,8 @@ test:
 build_prod:
 	GOOS=linux GOARCH=amd64 go build -o pill-reminder ./cmd
 
+lint:
+	golangci-lint run --fix
+
 # default
 run: bot

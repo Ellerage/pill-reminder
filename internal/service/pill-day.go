@@ -45,7 +45,9 @@ func (s *PillDayService) IsTakenToday(chatId int64) (bool, error) {
 	pillDay, err := s.pillDayRepo.GetByDateAndChatId(chatId, date)
 
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		s.pillDayRepo.Create(chatId, nil)
+		if err := s.pillDayRepo.Create(chatId, nil); err != nil {
+			return false, err
+		}
 
 		return false, nil
 	} else {
