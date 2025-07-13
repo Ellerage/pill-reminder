@@ -24,7 +24,7 @@ func GetFormattedNowDate() string {
 	return GetNowDateTime().Format("2006-01-02")
 }
 
-func GetUTCFromUserTime(timeStr string, userTimeZone *string) string {
+func GetUTCFromUserTime(timeStr string, userTimeZone *string) (string, error) {
 	var timezone string
 
 	if userTimeZone != nil {
@@ -35,21 +35,21 @@ func GetUTCFromUserTime(timeStr string, userTimeZone *string) string {
 
 	loc, err := time.LoadLocation(timezone)
 	if err != nil {
-		slog.Error(err.Error())
+		return "", err
 	}
 
 	now := time.Now().In(loc)
 	parsed, err := time.Parse("15:04", timeStr)
 
 	if err != nil {
-		slog.Error(err.Error())
+		return "", err
 	}
 
 	return time.Date(
 		now.Year(), now.Month(), now.Day(),
 		parsed.Hour(), parsed.Minute(), 0, 0,
 		loc,
-	).UTC().Format("15:04")
+	).UTC().Format("15:04"), nil
 }
 
 func GetTimeFromString(str string) time.Time {

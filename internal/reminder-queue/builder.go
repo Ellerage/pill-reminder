@@ -46,13 +46,14 @@ func NewReminderQueue(deps ReminderQueueDeps) *ReminderQueue {
 	)
 	serverPingErr := server.Ping()
 	if serverPingErr != nil {
-		slog.Error(serverPingErr.Error())
+		panic(serverPingErr)
 	}
 
 	scheduler := asynq.NewScheduler(opt, nil)
 	schedulerPingErr := scheduler.Ping()
+
 	if schedulerPingErr != nil {
-		slog.Error(schedulerPingErr.Error())
+		panic(schedulerPingErr)
 	}
 
 	return &ReminderQueue{

@@ -1,4 +1,4 @@
-package tgbotapi
+package tgbot
 
 import (
 	"fmt"
@@ -25,7 +25,6 @@ func (b *BotService) handleMessage(message *tg.Message) {
 	}
 
 	user, err := b.userService.GetByChatId(chatId)
-
 	if err != nil {
 		slog.Error(err.Error())
 	}

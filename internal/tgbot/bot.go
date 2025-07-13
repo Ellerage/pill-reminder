@@ -1,8 +1,7 @@
-package tgbotapi
+package tgbot
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"pill-reminder/internal/utils/enums"
 
@@ -44,7 +43,7 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 
 	updates := b.api.GetUpdatesChan(u)
 
-	log.Println("Listening for new messages...")
+	slog.Info("Listening for new messages...")
 
 	for {
 		select {
