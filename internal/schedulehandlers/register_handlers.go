@@ -14,7 +14,7 @@ type HandlersParams struct {
 	PillDayService       PillDayService
 }
 
-func RegisterHandlers(params HandlersParams) {
+func RegisterHandlers(params HandlersParams) error {
 	mux := asynq.NewServeMux()
 
 	mux.HandleFunc("reminder:daily", makeDailyReminderHandler(DailyReminderHandler{
@@ -29,7 +29,12 @@ func RegisterHandlers(params HandlersParams) {
 		pillDayService: params.PillDayService,
 	}))
 
-	if err := params.Server.Run(mux); err != nil {
+	err := params.Server.Run(mux)
+
+	if err != nil {
 		slog.Error("asynq server failed", "err", err)
+		return err
 	}
+
+	return nil
 }

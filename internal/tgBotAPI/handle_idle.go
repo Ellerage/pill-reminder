@@ -11,15 +11,18 @@ import (
 
 func (b *BotService) handleIdleMessages(message *tg.Message) {
 	if message.Text == string(enums.ActionTake) {
-		errMarkAsTaken := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
+		err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
 
-		if errMarkAsTaken != nil {
-			slog.Error(errMarkAsTaken.Error())
+		if err != nil {
+			slog.Error(err.Error())
 			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"), &enums.SendMessageButtons{Take: true, Edit: true})
 			return
 		}
 
-		cronId := b.reminderService.GetFollowupCronIdByChatId(message.Chat.ID)
+		cronId, err := b.reminderService.GetFollowupCronIdByChatId(message.Chat.ID)
+		if err != nil {
+			slog.Error(err.Error())
+		}
 
 		errRemoveByChatId := b.reminderQueue.Unregister(cronId)
 		if errRemoveByChatId != nil {
@@ -27,7 +30,6 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 		}
 
 		_, deleteErr := b.reminderService.DeleteByChatId(message.Chat.ID, true)
-
 		if deleteErr != nil {
 			slog.Error(deleteErr.Error())
 		}

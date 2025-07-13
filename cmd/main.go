@@ -60,7 +60,7 @@ func main() {
 
 	err := reminderQueue.Scheduler.Ping()
 	if err != nil {
-		slog.Error(err.Error())
+		panic(err)
 	}
 
 	// TG bot API
@@ -85,7 +85,10 @@ func main() {
 		slog.Error(err.Error())
 	}
 
-	reminderQueue.Start(users)
+	err = reminderQueue.Start(users)
+	if err != nil {
+		panic(err)
+	}
 
 	go func() {
 		if err := reminderQueue.Scheduler.Run(); err != nil {
@@ -99,7 +102,10 @@ func main() {
 
 	// Schedule Event handlers
 	go func() {
-		schedulehandlers.RegisterHandlers(schedulehandlers.HandlersParams{Server: reminderQueue.Server, Scheduler: reminderQueue.Scheduler, ReminderQueueService: reminderQueueService, TgBot: botService})
+		err = schedulehandlers.RegisterHandlers(schedulehandlers.HandlersParams{Server: reminderQueue.Server, Scheduler: reminderQueue.Scheduler, ReminderQueueService: reminderQueueService, TgBot: botService})
+		if err != nil {
+			panic(err)
+		}
 	}()
 
 	sig := <-sigCh

@@ -96,7 +96,9 @@ func (repo *UserRepo) Update(chatId int64, toUpdate model.UserUpdate) error {
 
 	if err != nil {
 		slog.Error(err.Error())
+
+		return err
 	}
 
-	return err
+	return nil
 }

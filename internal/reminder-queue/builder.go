@@ -2,6 +2,7 @@ package reminderqueue
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"pill-reminder/internal/model"
@@ -9,10 +10,6 @@ import (
 
 	"github.com/hibiken/asynq"
 )
-
-type ReminderQueueService interface {
-	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
-}
 
 type RedisConnectionOptions struct {
 	RedisAddr string
@@ -66,7 +63,9 @@ func NewReminderQueue(deps ReminderQueueDeps) *ReminderQueue {
 	}
 }
 
-func (q *ReminderQueue) Start(users []model.User) {
+func (q *ReminderQueue) Start(users []model.User) error {
+	var errs []error
+
 	for _, user := range users {
 		timeToNotify := utils.GetTimeFromString(user.TimeToNotify)
 		cronStr := fmt.Sprintf("%d %d * * *", timeToNotify.Minute(), timeToNotify.Hour())
@@ -74,20 +73,25 @@ func (q *ReminderQueue) Start(users []model.User) {
 		data, err := json.Marshal(model.DailyReminderPayload{ChatId: user.ChatId, RemindInterval: user.RemindInterval})
 		if err != nil {
 			slog.Error(err.Error())
+			errs = append(errs, err)
 		}
 
 		id, err := q.Scheduler.Register(cronStr, asynq.NewTask("reminder:daily", data))
 
 		if err != nil {
 			slog.Error(err.Error())
+			errs = append(errs, err)
 		}
 
 		if err := q.deps.ReminderQueueService.CreateOrUpdate(user.ChatId, id, "Daily"); err != nil {
 			slog.Error(err.Error())
+			errs = append(errs, err)
 		}
 
 		slog.Info(fmt.Sprintf("ChatId: %d, CronId: %s, CronStr: %s", user.ChatId, id, cronStr))
 	}
+
+	return errors.Join(errs...)
 }
 
 func (q *ReminderQueue) Register(chatId int64, cron string, remindInterval string) (string, error) {
