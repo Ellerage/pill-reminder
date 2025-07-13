@@ -56,7 +56,6 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 			slog.Info("Bot listener stopped")
 			return
 		}
-
 	}
 }
 

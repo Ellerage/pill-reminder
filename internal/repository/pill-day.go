@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"log/slog"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"time"
@@ -53,10 +52,6 @@ func (repo *PillDayRepo) Create(chatId int64, timeOfTaking *time.Time) error {
 
 	_, err := repo.db.Collection("pill-day").InsertOne(ctx, pillDay)
 
-	if err != nil {
-		slog.Error(err.Error())
-	}
-
 	return err
 }
 
@@ -67,10 +62,6 @@ func (repo *PillDayRepo) UpdateTimeByDate(chatId int64, dateTime time.Time) erro
 	toUpdate := bson.M{"$set": bson.M{"timeOfTaking": dateTime.Format("15:04")}}
 
 	_, err := repo.db.Collection("pill-day").UpdateOne(ctx, bson.M{"date": dateTime.Format("2006-01-02"), "chatId": chatId}, toUpdate)
-
-	if err != nil {
-		slog.Error(err.Error())
-	}
 
 	return err
 }

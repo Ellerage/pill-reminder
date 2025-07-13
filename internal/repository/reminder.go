@@ -38,14 +38,14 @@ func (repo *ReminderQueueRepository) GetCronIdByChatId(chatId int64) (string, st
 	return dailyCronID, followupCronID, nil
 }
 
-func (repo *ReminderQueueRepository) GetFollowupCronIdByChatId(chatId int64) string {
+func (repo *ReminderQueueRepository) GetFollowupCronIdByChatId(chatId int64) (string, error) {
 	result, err := repo.db.Get(context.Background(), fmt.Sprintf("%d:Followup", chatId)).Result()
 
 	if err != nil {
-		slog.Error(err.Error())
+		return "", err
 	}
 
-	return result
+	return result, nil
 }
 
 func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string, notificationType string) error {
@@ -57,7 +57,6 @@ func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string,
 	err := status.Err()
 
 	if err != nil {
-		slog.Error(err.Error())
 		return err
 	}
 
@@ -76,7 +75,7 @@ func (repo *ReminderQueueRepository) DeleteByChatId(chatId int64, onlyFollowUp b
 	deleted, err := result.Result()
 
 	if err != nil {
-		slog.Error(err.Error())
+		return 0, err
 	}
 
 	slog.Info(fmt.Sprintf("Removed crons for chat id: %d. Amount: %d", chatId, deleted))

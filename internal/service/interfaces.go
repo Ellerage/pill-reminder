@@ -19,7 +19,7 @@ type UserRepository interface {
 }
 
 type ReminderQueueRepository interface {
-	GetFollowupCronIdByChatId(chatId int64) string
+	GetFollowupCronIdByChatId(chatId int64) (string, error)
 	GetCronIdByChatId(chatId int64) (string, string, error)
 	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
 	DeleteByChatId(chatId int64, onlyFollowup bool) (int64, error)

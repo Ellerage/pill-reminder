@@ -12,7 +12,7 @@ func (s *ReminderQueueService) GetCronIdByChatId(chatId int64) (string, string, 
 	return s.notificationQueueRepository.GetCronIdByChatId(chatId)
 }
 
-func (s *ReminderQueueService) GetFollowupCronIdByChatId(chatId int64) string {
+func (s *ReminderQueueService) GetFollowupCronIdByChatId(chatId int64) (string, error) {
 	return s.notificationQueueRepository.GetFollowupCronIdByChatId(chatId)
 }
 
