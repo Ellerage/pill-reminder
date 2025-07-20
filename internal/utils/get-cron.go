@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 )
 
@@ -16,8 +15,6 @@ func GetDailyCronFromStringTime(timeStr string) (string, error) {
 	validTime, err := time.Parse("15:04", timeStr)
 
 	if err != nil {
-		slog.Error(err.Error())
-
 		return "", err
 	}
 
