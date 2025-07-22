@@ -1,6 +1,9 @@
 package schedulehandlers
 
-import "pill-reminder/internal/utils/enums"
+import (
+	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils/enums"
+)
 
 type ReminderQueueService interface {
 	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
@@ -12,4 +15,12 @@ type TgBot interface {
 
 type PillDayService interface {
 	IsTakenToday(chatId int64) (bool, error)
+}
+
+type ReminderQueue interface {
+	RegisterSchedule(cronSpec string, taskType string, taskPayload any) (string, error)
+}
+
+type UserService interface {
+	GetByChatId(chatId int64) (*model.User, error)
 }

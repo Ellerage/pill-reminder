@@ -11,16 +11,17 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-type DailyReminderHandler struct {
+type DelayedReminderHandler struct {
 	reminderQueue        ReminderQueue
 	reminderQueueService ReminderQueueService
 	tgBot                TgBot
 	pillDayService       PillDayService
+	userService          UserService
 }
 
-func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
+func makeDelayedReminderHandler(deps DelayedReminderHandler) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
-		var payload model.DailyReminderPayload
+		var payload model.DelayedReminderPayload
 
 		if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 			slog.Error(err.Error())
@@ -36,7 +37,12 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 			return nil
 		}
 
-		cronId, err := deps.reminderQueue.RegisterSchedule(payload.RemindInterval, "reminder:followup", t.Payload())
+		user, err := deps.userService.GetByChatId(payload.ChatId)
+		if err != nil {
+			return err
+		}
+
+		cronId, err := deps.reminderQueue.RegisterSchedule(user.RemindInterval, "reminder:followup", payload)
 		if err != nil {
 			slog.Error(err.Error())
 		}
@@ -47,7 +53,7 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 			slog.Error(errCreating.Error())
 		}
 
-		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true})
+		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true})
 
 		return nil
 	}

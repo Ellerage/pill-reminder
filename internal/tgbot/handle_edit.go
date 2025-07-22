@@ -89,7 +89,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return
 	}
 
-	cronId, cronRegisterErr := b.reminderQueue.Register(message.Chat.ID, cronStr, remindIntervalCron)
+	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, "reminder:daily", model.DailyReminderPayload{ChatId: message.Chat.ID, RemindInterval: userData.UserRepeatInterval})
 
 	if cronRegisterErr != nil {
 		slog.Error(cronRegisterErr.Error())

@@ -29,6 +29,7 @@ type ReminderService interface {
 }
 
 type ReminderQueue interface {
-	Register(chatId int64, cron string, repeatCronStr string) (string, error)
+	RegisterSchedule(cronSpec string, taskType string, taskPayload any) (string, error)
+	RegisterDelayed(chatId int64) (string, error)
 	Unregister(cronId string) error
 }

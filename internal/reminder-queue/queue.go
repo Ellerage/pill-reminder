@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
+	"time"
 
 	"github.com/hibiken/asynq"
 )
@@ -77,7 +78,7 @@ func (q *ReminderQueue) Start(users []model.User) error {
 			errs = append(errs, err)
 		}
 
-		id, err := q.Scheduler.Register(cronStr, asynq.NewTask("reminder:daily", data))
+		id, err := q.RegisterSchedule(cronStr, "reminder:daily", data)
 
 		if err != nil {
 			slog.Error(err.Error())
@@ -95,20 +96,37 @@ func (q *ReminderQueue) Start(users []model.User) error {
 	return errors.Join(errs...)
 }
 
-func (q *ReminderQueue) Register(chatId int64, cron string, remindInterval string) (string, error) {
-	data, err := json.Marshal(model.DailyReminderPayload{ChatId: chatId, RemindInterval: remindInterval})
+func (q *ReminderQueue) RegisterSchedule(cronSpec string, taskType string, taskPayload any) (string, error) {
+	data, err := json.Marshal(taskPayload)
 	if err != nil {
-		slog.Error(fmt.Sprintf("json.Marshal failed: %v", err))
+		return "", err
 	}
 
-	id, registerError := q.Scheduler.Register(cron, asynq.NewTask("reminder:daily", data))
-	if registerError != nil {
-		return "", registerError
+	cronId, registerErr := q.Scheduler.Register(cronSpec, asynq.NewTask(taskType, data))
+	if registerErr != nil {
+		return "", registerErr
 	}
 
-	slog.Info(fmt.Sprintf("ChatId: %d, CronId: %s, CronStr: %s", chatId, id, cron))
+	return cronId, nil
+}
 
-	return id, registerError
+func (q *ReminderQueue) RegisterDelayed(chatId int64) (string, error) {
+	payload := model.DelayedReminderPayload{
+		ChatId: chatId,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	timeToWait := asynq.ProcessIn(3 * time.Minute)
+	info, err := q.Client.Enqueue(asynq.NewTask("reminder:delayed", data), timeToWait)
+	if err != nil {
+		return "", err
+	}
+
+	return info.ID, err
 }
 
 func (q *ReminderQueue) Unregister(cronId string) error {

@@ -104,9 +104,11 @@ func main() {
 	go func() {
 		err = schedulehandlers.RegisterHandlers(schedulehandlers.HandlersParams{
 			Server:               reminderQueue.Server,
-			Scheduler:            reminderQueue.Scheduler,
+			ReminderQueue:        reminderQueue,
 			ReminderQueueService: reminderQueueService,
 			TgBot:                botService,
+			PillDayService:       pillDayService,
+			UserService:          userService,
 		})
 
 		if err != nil {

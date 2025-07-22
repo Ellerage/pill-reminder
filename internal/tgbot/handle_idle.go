@@ -9,6 +9,25 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+func (b *BotService) cleanReminder(chatId int64) error {
+	cronId, err := b.reminderService.GetFollowupCronIdByChatId(chatId)
+	if err != nil {
+		return err
+	}
+
+	errRemoveByChatId := b.reminderQueue.Unregister(cronId)
+	if errRemoveByChatId != nil {
+		return errRemoveByChatId
+	}
+
+	_, deleteErr := b.reminderService.DeleteByChatId(chatId, true)
+	if deleteErr != nil {
+		return deleteErr
+	}
+
+	return nil
+}
+
 func (b *BotService) handleIdleMessages(message *tg.Message) {
 	if message.Text == string(enums.ActionTake) {
 		err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
@@ -19,19 +38,9 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 			return
 		}
 
-		cronId, err := b.reminderService.GetFollowupCronIdByChatId(message.Chat.ID)
-		if err != nil {
-			slog.Error(err.Error())
-		}
-
-		errRemoveByChatId := b.reminderQueue.Unregister(cronId)
-		if errRemoveByChatId != nil {
-			slog.Error(errRemoveByChatId.Error())
-		}
-
-		_, deleteErr := b.reminderService.DeleteByChatId(message.Chat.ID, true)
-		if deleteErr != nil {
-			slog.Error(deleteErr.Error())
+		cleanReminderErr := b.cleanReminder(message.Chat.ID)
+		if cleanReminderErr != nil {
+			slog.Error(cleanReminderErr.Error())
 		}
 
 		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true})
@@ -46,5 +55,19 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 		}
 
 		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true})
+	}
+
+	if message.Text == string(enums.ActionDelay) {
+		cleanReminderErr := b.cleanReminder(message.Chat.ID)
+		if cleanReminderErr != nil {
+			slog.Error(cleanReminderErr.Error())
+		}
+
+		_, err := b.reminderQueue.RegisterDelayed(message.Chat.ID)
+		if err != nil {
+			slog.Error(err.Error())
+		}
+
+		b.SendMessage(message.Chat.ID, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true, Edit: true})
 	}
 }

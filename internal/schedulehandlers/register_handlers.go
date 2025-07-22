@@ -8,10 +8,11 @@ import (
 
 type HandlersParams struct {
 	Server               *asynq.Server
-	Scheduler            *asynq.Scheduler
 	ReminderQueueService ReminderQueueService
 	TgBot                TgBot
 	PillDayService       PillDayService
+	ReminderQueue        ReminderQueue
+	UserService          UserService
 }
 
 func RegisterHandlers(params HandlersParams) error {
@@ -19,7 +20,7 @@ func RegisterHandlers(params HandlersParams) error {
 
 	mux.HandleFunc("reminder:daily", makeDailyReminderHandler(DailyReminderHandler{
 		reminderQueueService: params.ReminderQueueService,
-		scheduler:            params.Scheduler,
+		reminderQueue:        params.ReminderQueue,
 		tgBot:                params.TgBot,
 		pillDayService:       params.PillDayService,
 	}))
@@ -27,6 +28,14 @@ func RegisterHandlers(params HandlersParams) error {
 	mux.HandleFunc("reminder:followup", makeFollowupReminderHandle(FollowupHandler{
 		tgBot:          params.TgBot,
 		pillDayService: params.PillDayService,
+	}))
+
+	mux.HandleFunc("reminder:delayed", makeDelayedReminderHandler(DelayedReminderHandler{
+		reminderQueueService: params.ReminderQueueService,
+		reminderQueue:        params.ReminderQueue,
+		tgBot:                params.TgBot,
+		pillDayService:       params.PillDayService,
+		userService:          params.UserService,
 	}))
 
 	err := params.Server.Run(mux)
