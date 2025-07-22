@@ -42,5 +42,9 @@
   {
     "id": "reminderNotification",
     "translation": "It's a notification to remind you about your pill"
+  },
+  {
+    "id": "delayReminder",
+    "translation": "Reminder notifications paused for a hour"
   }
 ]

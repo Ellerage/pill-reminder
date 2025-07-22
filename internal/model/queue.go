@@ -15,6 +15,10 @@ type FollowUpReminderPayload struct {
 	ChatId int64
 }
 
+type DelayedReminderPayload struct {
+	ChatId int64
+}
+
 type GetAllQueueReminderFilters struct {
 	ChatId       *int64
 	ReminderType *string
