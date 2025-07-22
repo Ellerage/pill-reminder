@@ -11,13 +11,20 @@ import (
 )
 
 type ConnectMongoOptions struct {
-	Uri    string
-	DBName string
+	Uri      string
+	DBName   string
+	UserName string
+	Password string
 }
 
 func ConnectMongo(connectOptions ConnectMongoOptions) *mongo.Database {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(connectOptions.Uri).SetServerAPIOptions(serverAPI)
+	creds := options.Credential{
+		Username:   connectOptions.UserName,
+		Password:   connectOptions.Password,
+		AuthSource: "admin",
+	}
+	opts := options.Client().ApplyURI(connectOptions.Uri).SetServerAPIOptions(serverAPI).SetAuth(creds)
 
 	client, err := mongo.Connect(opts)
 

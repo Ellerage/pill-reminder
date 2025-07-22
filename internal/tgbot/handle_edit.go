@@ -19,6 +19,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	var toUpdate = model.UserUpdate{Status: &idleStatus}
 	timeToNotify := userData.UserTimeToNotify
 	remindIntervalCron := userData.UserRepeatInterval
+
 	messageToSend := ""
 
 	isTime := timeRegex.MatchString(message.Text)
@@ -31,6 +32,8 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return
 	}
 
+	var parseErr error
+
 	if isMinutes {
 		remindInterval := uint8(minutes)
 		remindIntervalCron = utils.GetCronFromMinutes(remindInterval)
@@ -38,26 +41,20 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		toUpdate.RemindInterval = &remindIntervalCron
 		messageToSend = i18n.GetText("repeatIntervalTimeUpdated")
 	} else if isTime {
-		timeToNotify, err := utils.GetUTCFromUserTime(message.Text, userData.UserTimezone)
-
-		if err != nil {
-			slog.Error(err.Error())
-			return
-		}
+		timeToNotify, parseErr = utils.GetUTCFromUserTime(message.Text, userData.UserTimezone)
 
 		toUpdate.TimeToNotify = &timeToNotify
 		messageToSend = i18n.GetText("firstAtDayNotificationTimeUpdated")
 	} else if isTimezone {
-		timeToNotify, err := utils.GetUTCFromUserTime(userData.UserTimeToNotify, &message.Text)
-
-		if err != nil {
-			slog.Error(err.Error())
-			return
-		}
+		timeToNotify, parseErr = utils.GetUTCFromUserTime(userData.UserTimeToNotify, &message.Text)
 
 		toUpdate.TimeToNotify = &timeToNotify
 		toUpdate.Timezone = &message.Text
 		messageToSend = i18n.GetText("timezoneWasChanged")
+	}
+
+	if parseErr != nil {
+		slog.Error(parseErr.Error())
 	}
 
 	dailyCronId, followUpCronId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)

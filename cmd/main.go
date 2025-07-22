@@ -29,8 +29,10 @@ func main() {
 	logger.Init()
 	i18n.Init()
 	mongo := db.ConnectMongo(db.ConnectMongoOptions{
-		Uri:    cfg.MONGO_URL,
-		DBName: cfg.MONGO_DB_NAME,
+		Uri:      cfg.MONGO_URL,
+		DBName:   cfg.MONGO_DB_NAME,
+		UserName: cfg.MONGO_INITDB_ROOT_USERNAME,
+		Password: cfg.MONGO_INITDB_ROOT_PASSWORD,
 	})
 
 	redis := db.ConnectRedis(ctx, db.ConnectRedisOptions{
