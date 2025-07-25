@@ -1,5 +1,7 @@
 package service
 
+import "pill-reminder/internal/utils/enums"
+
 type ReminderQueueService struct {
 	notificationQueueRepository ReminderQueueRepository
 }
@@ -16,7 +18,7 @@ func (s *ReminderQueueService) GetFollowupCronIdByChatId(chatId int64) (string, 
 	return s.notificationQueueRepository.GetFollowupCronIdByChatId(chatId)
 }
 
-func (s *ReminderQueueService) CreateOrUpdate(chatId int64, cronId string, notificationType string) error {
+func (s *ReminderQueueService) CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error {
 	return s.notificationQueueRepository.CreateOrUpdate(chatId, cronId, notificationType)
 }
 

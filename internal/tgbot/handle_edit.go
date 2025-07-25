@@ -30,7 +30,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 
 	if !isMinutes && !isTime && !isTimezone {
 		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"), nil, nil)
-		return errors.New("Invalid input")
+		return errors.New("invalid input")
 	}
 
 	var parseErr error
@@ -63,6 +63,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
+	// TODO: add unregister by slice
 	if dailyCronId != "" {
 		if err := b.reminderQueue.Unregister(dailyCronId); err != nil {
 			slog.Error(err.Error())
@@ -84,13 +85,13 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, "reminder:daily", model.DailyReminderPayload{ChatId: message.Chat.ID, RemindInterval: userData.UserRepeatInterval})
+	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, enums.ReminderEventDaily, model.DailyReminderPayload{ChatId: message.Chat.ID, RemindInterval: userData.UserRepeatInterval})
 
 	if cronRegisterErr != nil {
 		return cronRegisterErr
 	}
 
-	if err := b.reminderService.CreateOrUpdate(message.Chat.ID, cronId, "Daily"); err != nil {
+	if err := b.reminderService.CreateOrUpdate(message.Chat.ID, cronId, enums.ReminderTypeDaily); err != nil {
 		return err
 	}
 

@@ -42,12 +42,12 @@ func makeDelayedReminderHandler(deps DelayedReminderHandler) asynq.HandlerFunc {
 			return err
 		}
 
-		cronId, err := deps.reminderQueue.RegisterSchedule(user.RemindInterval, "reminder:followup", payload)
+		cronId, err := deps.reminderQueue.RegisterSchedule(user.RemindInterval, enums.ReminderEventFollowup, payload)
 		if err != nil {
 			slog.Error(err.Error())
 		}
 
-		errCreating := deps.reminderQueueService.CreateOrUpdate(payload.ChatId, cronId, "Followup")
+		errCreating := deps.reminderQueueService.CreateOrUpdate(payload.ChatId, cronId, enums.ReminderTypeFollowup)
 
 		if errCreating != nil {
 			slog.Error(errCreating.Error())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"pill-reminder/internal/utils/enums"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -48,7 +49,7 @@ func (repo *ReminderQueueRepository) GetFollowupCronIdByChatId(chatId int64) (st
 	return result, nil
 }
 
-func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string, notificationType string) error {
+func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -64,10 +65,10 @@ func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string,
 }
 
 func (repo *ReminderQueueRepository) DeleteByChatId(chatId int64, onlyFollowUp bool) (int64, error) {
-	toDelete := []string{fmt.Sprintf("%d:%s", chatId, "Followup")}
+	toDelete := []string{fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeFollowup)}
 
 	if !onlyFollowUp {
-		toDelete = append(toDelete, fmt.Sprintf("%d:%s", chatId, "Daily"))
+		toDelete = append(toDelete, fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeDaily))
 	}
 
 	result := repo.db.Del(context.TODO(), toDelete...)
