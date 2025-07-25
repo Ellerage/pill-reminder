@@ -8,6 +8,7 @@ import (
 	"net"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
+	"pill-reminder/internal/utils/enums"
 	"strconv"
 	"time"
 
@@ -76,14 +77,14 @@ func (q *ReminderQueue) Start(users []model.User) error {
 
 		data := model.DailyReminderPayload{ChatId: user.ChatId, RemindInterval: user.RemindInterval}
 
-		id, err := q.RegisterSchedule(cronStr, "reminder:daily", data)
+		id, err := q.RegisterSchedule(cronStr, enums.ReminderEventDaily, data)
 
 		if err != nil {
 			slog.Error(err.Error())
 			errs = append(errs, err)
 		}
 
-		if err := q.deps.ReminderQueueService.CreateOrUpdate(user.ChatId, id, "Daily"); err != nil {
+		if err := q.deps.ReminderQueueService.CreateOrUpdate(user.ChatId, id, enums.ReminderTypeDaily); err != nil {
 			slog.Error(err.Error())
 			errs = append(errs, err)
 		}
@@ -94,13 +95,13 @@ func (q *ReminderQueue) Start(users []model.User) error {
 	return errors.Join(errs...)
 }
 
-func (q *ReminderQueue) RegisterSchedule(cronSpec string, taskType string, taskPayload any) (string, error) {
+func (q *ReminderQueue) RegisterSchedule(cronSpec string, taskType enums.QueueEventsEnum, taskPayload any) (string, error) {
 	data, err := json.Marshal(taskPayload)
 	if err != nil {
 		return "", err
 	}
 
-	cronId, registerErr := q.Scheduler.Register(cronSpec, asynq.NewTask(taskType, data))
+	cronId, registerErr := q.Scheduler.Register(cronSpec, asynq.NewTask(string(taskType), data))
 	if registerErr != nil {
 		return "", registerErr
 	}
@@ -119,7 +120,7 @@ func (q *ReminderQueue) RegisterDelayed(chatId int64) (string, error) {
 	}
 
 	timeToWait := asynq.ProcessIn(3 * time.Minute)
-	info, err := q.Client.Enqueue(asynq.NewTask("reminder:delayed", data), timeToWait)
+	info, err := q.Client.Enqueue(asynq.NewTask(string(enums.ReminderEventDelayed), data), timeToWait)
 	if err != nil {
 		return "", err
 	}

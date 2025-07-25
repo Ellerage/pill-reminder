@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils/enums"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -24,12 +25,12 @@ type PillDayService interface {
 type ReminderService interface {
 	GetCronIdByChatId(chatId int64) (string, string, error)
 	GetFollowupCronIdByChatId(chatId int64) (string, error)
-	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
+	CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error
 	DeleteByChatId(chatId int64, onlyFollowUp bool) (int64, error)
 }
 
 type ReminderQueue interface {
-	RegisterSchedule(cronSpec string, taskType string, taskPayload any) (string, error)
+	RegisterSchedule(cronSpec string, taskType enums.QueueEventsEnum, taskPayload any) (string, error)
 	RegisterDelayed(chatId int64) (string, error)
 	Unregister(cronId string) error
 }

@@ -35,12 +35,12 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 		}
 
 		payload := model.FollowUpReminderPayload{ChatId: parsed.ChatId}
-		cronId, err := deps.reminderQueue.RegisterSchedule(parsed.RemindInterval, "reminder:followup", payload)
+		cronId, err := deps.reminderQueue.RegisterSchedule(parsed.RemindInterval, enums.ReminderEventFollowup, payload)
 		if err != nil {
 			return err
 		}
 
-		errCreating := deps.reminderQueueService.CreateOrUpdate(parsed.ChatId, cronId, "Followup")
+		errCreating := deps.reminderQueueService.CreateOrUpdate(parsed.ChatId, cronId, enums.ReminderTypeFollowup)
 
 		if errCreating != nil {
 			return errCreating

@@ -2,6 +2,7 @@ package schedulehandlers
 
 import (
 	"log/slog"
+	"pill-reminder/internal/utils/enums"
 
 	"github.com/hibiken/asynq"
 )
@@ -18,19 +19,19 @@ type HandlersParams struct {
 func RegisterHandlers(params HandlersParams) error {
 	mux := asynq.NewServeMux()
 
-	mux.HandleFunc("reminder:daily", makeDailyReminderHandler(DailyReminderHandler{
+	mux.HandleFunc(string(enums.ReminderEventDaily), makeDailyReminderHandler(DailyReminderHandler{
 		reminderQueueService: params.ReminderQueueService,
 		reminderQueue:        params.ReminderQueue,
 		tgBot:                params.TgBot,
 		pillDayService:       params.PillDayService,
 	}))
 
-	mux.HandleFunc("reminder:followup", makeFollowupReminderHandle(FollowupHandler{
+	mux.HandleFunc(string(enums.ReminderEventFollowup), makeFollowupReminderHandle(FollowupHandler{
 		tgBot:          params.TgBot,
 		pillDayService: params.PillDayService,
 	}))
 
-	mux.HandleFunc("reminder:delayed", makeDelayedReminderHandler(DelayedReminderHandler{
+	mux.HandleFunc(string(enums.ReminderEventDelayed), makeDelayedReminderHandler(DelayedReminderHandler{
 		reminderQueueService: params.ReminderQueueService,
 		reminderQueue:        params.ReminderQueue,
 		tgBot:                params.TgBot,

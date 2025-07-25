@@ -7,7 +7,7 @@ import (
 )
 
 type ReminderQueueService interface {
-	CreateOrUpdate(chatId int64, cronId string, notificationType string) error
+	CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error
 }
 
 type TgBot interface {
@@ -19,7 +19,7 @@ type PillDayService interface {
 }
 
 type ReminderQueue interface {
-	RegisterSchedule(cronSpec string, taskType string, taskPayload any) (string, error)
+	RegisterSchedule(cronSpec string, taskType enums.QueueEventsEnum, taskPayload any) (string, error)
 }
 
 type UserService interface {
