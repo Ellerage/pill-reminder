@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
+	"strconv"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -33,7 +35,7 @@ type ReminderQueue struct {
 
 func NewReminderQueue(deps ReminderQueueDeps) *ReminderQueue {
 	opt := asynq.RedisClientOpt{
-		Addr:     fmt.Sprintf("%s:%d", deps.RedisConnectionOptions.RedisAddr, deps.RedisConnectionOptions.RedisPort),
+		Addr:     net.JoinHostPort(deps.RedisConnectionOptions.RedisAddr, strconv.Itoa(deps.RedisConnectionOptions.RedisPort)),
 		Password: deps.RedisConnectionOptions.RedisPwd,
 		DB:       deps.RedisConnectionOptions.RedisDB,
 	}
@@ -72,11 +74,7 @@ func (q *ReminderQueue) Start(users []model.User) error {
 		timeToNotify := utils.GetTimeFromString(user.TimeToNotify)
 		cronStr := fmt.Sprintf("%d %d * * *", timeToNotify.Minute(), timeToNotify.Hour())
 
-		data, err := json.Marshal(model.DailyReminderPayload{ChatId: user.ChatId, RemindInterval: user.RemindInterval})
-		if err != nil {
-			slog.Error(err.Error())
-			errs = append(errs, err)
-		}
+		data := model.DailyReminderPayload{ChatId: user.ChatId, RemindInterval: user.RemindInterval}
 
 		id, err := q.RegisterSchedule(cronStr, "reminder:daily", data)
 

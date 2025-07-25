@@ -1,6 +1,7 @@
 package tgbot
 
 import (
+	"errors"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
@@ -14,7 +15,7 @@ import (
 
 var timeRegex = regexp.MustCompile(`^(?:[01]\d|2[0-3]):[0-5]\d$`)
 
-func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeEditing) {
+func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeEditing) error {
 	idleStatus := string(enums.UserStatusIdle)
 	var toUpdate = model.UserUpdate{Status: &idleStatus}
 	timeToNotify := userData.UserTimeToNotify
@@ -29,7 +30,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 
 	if !isMinutes && !isTime && !isTimezone {
 		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"), nil)
-		return
+		return errors.New("Invalid input")
 	}
 
 	var parseErr error
@@ -54,13 +55,12 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	}
 
 	if parseErr != nil {
-		slog.Error(parseErr.Error())
+		return parseErr
 	}
 
 	dailyCronId, followUpCronId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)
 	if err != nil {
-		slog.Error(err.Error())
-		return
+		return err
 	}
 
 	if dailyCronId != "" {
@@ -76,27 +76,25 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	}
 
 	if err := b.userService.Update(message.Chat.ID, toUpdate); err != nil {
-		slog.Error(err.Error())
-		return
+		return err
 	}
 
 	cronStr, err := utils.GetDailyCronFromStringTime(timeToNotify)
 	if err != nil {
-		slog.Error(err.Error())
-		return
+		return err
 	}
 
 	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, "reminder:daily", model.DailyReminderPayload{ChatId: message.Chat.ID, RemindInterval: userData.UserRepeatInterval})
 
 	if cronRegisterErr != nil {
-		slog.Error(cronRegisterErr.Error())
-		return
+		return cronRegisterErr
 	}
 
 	if err := b.reminderService.CreateOrUpdate(message.Chat.ID, cronId, "Daily"); err != nil {
-		slog.Error(err.Error())
-		return
+		return err
 	}
 
 	b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true})
+
+	return nil
 }
