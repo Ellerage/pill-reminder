@@ -1,10 +1,13 @@
 package tgbot
 
 import (
+	"errors"
+	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils/enums"
+	"strings"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -28,14 +31,13 @@ func (b *BotService) cleanReminder(chatId int64) error {
 	return nil
 }
 
-func (b *BotService) handleIdleMessages(message *tg.Message) {
+func (b *BotService) handleIdleMessages(message *tg.Message) error {
 	if message.Text == string(enums.ActionTake) {
 		err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
 
 		if err != nil {
-			slog.Error(err.Error())
-			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"), &enums.SendMessageButtons{Take: true, Edit: true})
-			return
+			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+			return err
 		}
 
 		cleanReminderErr := b.cleanReminder(message.Chat.ID)
@@ -43,18 +45,8 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 			slog.Error(cleanReminderErr.Error())
 		}
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true})
-	}
-
-	if message.Text == string(enums.ActionEdit) {
-		status := string(enums.UserStatusEditing)
-		err := b.userService.Update(message.Chat.ID, model.UserUpdate{Status: &status})
-		// TODO: Should I clean up schedule on changing status to edit?
-		if err != nil {
-			slog.Error(err.Error())
-		}
-
-		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true})
+		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		return nil
 	}
 
 	if message.Text == string(enums.ActionDelay) {
@@ -65,9 +57,44 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 
 		_, err := b.reminderQueue.RegisterDelayed(message.Chat.ID)
 		if err != nil {
-			slog.Error(err.Error())
+			return err
 		}
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true, Edit: true})
+		b.SendMessage(message.Chat.ID, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		return nil
 	}
+
+	if message.Text == string(enums.ActionEdit) {
+		status := string(enums.UserStatusEditing)
+		err := b.userService.Update(message.Chat.ID, model.UserUpdate{Status: &status})
+		// TODO: Should I clean up schedule on changing status to edit?
+		if err != nil {
+			slog.Error(err.Error())
+			return err
+		}
+
+		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+	}
+
+	if message.Text == string(enums.ActionMySetting) {
+		user, err := b.userService.GetByChatId(message.Chat.ID)
+		if err != nil {
+			return err
+		}
+
+		minutes := strings.TrimPrefix(strings.Split(user.RemindInterval, " ")[0], "*/") + " Minutes"
+
+		text := fmt.Sprintf(
+			"<b>User ID:</b> %d\n<b>Time to notify:</b> %s\n<b>Remind interval:</b> %s\n<b>Timezone:</b> %s",
+			user.ChatId,
+			user.TimeToNotify,
+			minutes,
+			user.Timezone,
+		)
+		parseMode := "HTML"
+
+		b.SendMessage(message.Chat.ID, text, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: &parseMode})
+	}
+
+	return errors.New("invalid")
 }

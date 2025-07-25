@@ -26,6 +26,10 @@ type BotServiceParams struct {
 	ReminderQueue   ReminderQueue
 }
 
+type MessageOptions struct {
+	ParseMode *string
+}
+
 func NewBotService(params BotServiceParams) *BotService {
 	return &BotService{
 		timezone:        params.Timezone,
@@ -58,9 +62,15 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 	}
 }
 
-func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons) {
+func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons, options *MessageOptions) {
 	msg := tg.NewMessage(chatID, message)
 	replyButtons := make([]tg.KeyboardButton, 0, 2)
+
+	if options != nil {
+		if options.ParseMode != nil {
+			msg.ParseMode = *options.ParseMode
+		}
+	}
 
 	if buttons != nil {
 		if buttons.Take {

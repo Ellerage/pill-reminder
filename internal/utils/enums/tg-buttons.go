@@ -3,10 +3,11 @@ package enums
 type Actions string
 
 const (
-	ActionTake   Actions = "Take"
-	ActionEdit   Actions = "Edit"
-	ActionDelay  Actions = "Delay"
-	ActionCreate Actions = "/start"
+	ActionTake      Actions = "Take"
+	ActionEdit      Actions = "Edit"
+	ActionDelay     Actions = "Delay"
+	ActionCreate    Actions = "/start"
+	ActionMySetting Actions = "Settings"
 )
 
 type SendMessageButtons struct {
