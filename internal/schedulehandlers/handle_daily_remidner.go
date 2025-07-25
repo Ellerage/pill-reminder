@@ -3,7 +3,6 @@ package schedulehandlers
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils/enums"
@@ -20,34 +19,34 @@ type DailyReminderHandler struct {
 
 func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
-		var payload model.DailyReminderPayload
+		var parsed model.DailyReminderPayload
 
-		if err := json.Unmarshal(t.Payload(), &payload); err != nil {
-			slog.Error(err.Error())
+		if err := json.Unmarshal(t.Payload(), &parsed); err != nil {
+			return err
 		}
 
-		isTaken, err := deps.pillDayService.IsTakenToday(payload.ChatId)
-
+		isTaken, err := deps.pillDayService.IsTakenToday(parsed.ChatId)
 		if err != nil {
-			slog.Error(err.Error())
+			return err
 		}
 
 		if isTaken {
 			return nil
 		}
 
-		cronId, err := deps.reminderQueue.RegisterSchedule(payload.RemindInterval, "reminder:followup", t.Payload())
+		payload := model.FollowUpReminderPayload{ChatId: parsed.ChatId}
+		cronId, err := deps.reminderQueue.RegisterSchedule(parsed.RemindInterval, "reminder:followup", payload)
 		if err != nil {
-			slog.Error(err.Error())
+			return err
 		}
 
-		errCreating := deps.reminderQueueService.CreateOrUpdate(payload.ChatId, cronId, "Followup")
+		errCreating := deps.reminderQueueService.CreateOrUpdate(parsed.ChatId, cronId, "Followup")
 
 		if errCreating != nil {
-			slog.Error(errCreating.Error())
+			return errCreating
 		}
 
-		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true})
+		deps.tgBot.SendMessage(parsed.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true})
 
 		return nil
 	}

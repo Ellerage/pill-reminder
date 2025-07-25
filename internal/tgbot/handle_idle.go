@@ -1,16 +1,23 @@
 package tgbot
 
 import (
+	"errors"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils/enums"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 func (b *BotService) cleanReminder(chatId int64) error {
 	cronId, err := b.reminderService.GetFollowupCronIdByChatId(chatId)
+
+	if errors.Is(err, redis.Nil) {
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
@@ -28,22 +35,22 @@ func (b *BotService) cleanReminder(chatId int64) error {
 	return nil
 }
 
-func (b *BotService) handleIdleMessages(message *tg.Message) {
+func (b *BotService) handleIdleMessages(message *tg.Message) error {
 	if message.Text == string(enums.ActionTake) {
 		err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
 
 		if err != nil {
-			slog.Error(err.Error())
 			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"), &enums.SendMessageButtons{Take: true, Edit: true})
-			return
+			return err
 		}
 
 		cleanReminderErr := b.cleanReminder(message.Chat.ID)
 		if cleanReminderErr != nil {
-			slog.Error(cleanReminderErr.Error())
+			return cleanReminderErr
 		}
 
 		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true})
+		return nil
 	}
 
 	if message.Text == string(enums.ActionEdit) {
@@ -52,6 +59,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 		// TODO: Should I clean up schedule on changing status to edit?
 		if err != nil {
 			slog.Error(err.Error())
+			return err
 		}
 
 		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true})
@@ -61,13 +69,18 @@ func (b *BotService) handleIdleMessages(message *tg.Message) {
 		cleanReminderErr := b.cleanReminder(message.Chat.ID)
 		if cleanReminderErr != nil {
 			slog.Error(cleanReminderErr.Error())
+			return cleanReminderErr
 		}
 
 		_, err := b.reminderQueue.RegisterDelayed(message.Chat.ID)
 		if err != nil {
 			slog.Error(err.Error())
+			return err
 		}
 
 		b.SendMessage(message.Chat.ID, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true, Edit: true})
+		return nil
 	}
+
+	return errors.New("invalid")
 }

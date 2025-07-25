@@ -14,7 +14,7 @@ type UserUpdate struct {
 	Timezone       *string `bson:"timezone,omitempty"`
 	TimeToNotify   *string `bson:"timeToNotify,omitempty"`
 	Status         *string `bson:"status,omitempty"`
-	RemindInterval *string `bson:"remindInterval"`
+	RemindInterval *string `bson:"remindInterval, omitempty"`
 }
 
 type UserCreate struct {

@@ -46,7 +46,7 @@ func (repo *UserRepo) GetByChatId(chatId int64) (*model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var user *model.User
+	var user model.User
 
 	err := repo.db.Collection("users").FindOne(ctx, bson.M{"chatId": chatId}).Decode(&user)
 
@@ -54,7 +54,7 @@ func (repo *UserRepo) GetByChatId(chatId int64) (*model.User, error) {
 		return nil, err
 	}
 
-	return user, nil
+	return &user, nil
 }
 
 func (repo *UserRepo) Create(toCreate model.User) error {
@@ -95,8 +95,6 @@ func (repo *UserRepo) Update(chatId int64, toUpdate model.UserUpdate) error {
 	_, err := repo.db.Collection("users").UpdateOne(ctx, bson.M{"chatId": chatId}, bson.M{"$set": set})
 
 	if err != nil {
-		slog.Error(err.Error())
-
 		return err
 	}
 

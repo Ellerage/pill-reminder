@@ -1,20 +1,24 @@
 package i18n
 
 import (
+	_ "embed"
+	"encoding/json"
 	"log"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v2"
 )
+
+//go:embed locales/en.json
+var enJSON []byte
 
 var bundle *i18n.Bundle
 
 func Init() {
 	bundle = i18n.NewBundle(language.English)
-	bundle.RegisterUnmarshalFunc("yaml", yaml.Unmarshal)
+	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 
-	if _, err := bundle.LoadMessageFile("locales/en.json"); err != nil {
+	if _, err := bundle.ParseMessageFileBytes(enJSON, "en.json"); err != nil {
 		log.Fatalf("failed to load en.json: %v", err)
 	}
 }

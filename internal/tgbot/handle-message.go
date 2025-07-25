@@ -1,8 +1,6 @@
 package tgbot
 
 import (
-	"fmt"
-	"log/slog"
 	"pill-reminder/internal/utils/enums"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -14,29 +12,29 @@ type HandleTimeEditing struct {
 	UserRepeatInterval string
 }
 
-func (b *BotService) handleMessage(message *tg.Message) {
+func (b *BotService) HandleMessage(message *tg.Message) error {
 	chatId := message.Chat.ID
 
-	slog.Info(fmt.Sprintf("Got Message from: %d", chatId))
-
 	if message.Text == string(enums.ActionCreate) {
-		b.handleUserCreate(chatId)
-		return
+		err := b.handleUserCreate(chatId)
+		return err
 	}
 
 	user, err := b.userService.GetByChatId(chatId)
 	if err != nil {
-		slog.Error(err.Error())
+		return err
 	}
 
 	if user.Status == string(enums.UserStatusEditing) || user.Status == string(enums.UserStatusInactive) {
-		b.handleTimeEditing(message, HandleTimeEditing{UserTimezone: &user.Timezone, UserTimeToNotify: user.TimeToNotify, UserRepeatInterval: user.RemindInterval})
+		err := b.handleTimeEditing(message, HandleTimeEditing{UserTimezone: &user.Timezone, UserTimeToNotify: user.TimeToNotify, UserRepeatInterval: user.RemindInterval})
 
-		return
+		return err
 	}
 
 	if user.Status == string(enums.UserStatusIdle) {
-		b.handleIdleMessages(message)
-		return
+		err := b.handleIdleMessages(message)
+		return err
 	}
+
+	return nil
 }
