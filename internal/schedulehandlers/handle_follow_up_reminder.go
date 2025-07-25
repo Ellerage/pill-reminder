@@ -24,7 +24,7 @@ func makeFollowupReminderHandle(deps FollowupHandler) asynq.HandlerFunc {
 			slog.Error(err.Error())
 		}
 
-		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("reminderNotification"), &enums.SendMessageButtons{Take: true, Edit: true})
+		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("reminderNotification"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
 
 		return nil
 	}

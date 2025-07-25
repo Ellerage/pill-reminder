@@ -29,7 +29,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	isMinutes := intParseError == nil
 
 	if !isMinutes && !isTime && !isTimezone {
-		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"), nil)
+		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"), nil, nil)
 		return errors.New("Invalid input")
 	}
 
@@ -94,7 +94,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true})
+	b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true}, nil)
 
 	return nil
 }

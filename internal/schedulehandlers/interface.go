@@ -2,6 +2,7 @@ package schedulehandlers
 
 import (
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/tgbot"
 	"pill-reminder/internal/utils/enums"
 )
 
@@ -10,7 +11,7 @@ type ReminderQueueService interface {
 }
 
 type TgBot interface {
-	SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons)
+	SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons, options *tgbot.MessageOptions)
 }
 
 type PillDayService interface {

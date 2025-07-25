@@ -53,7 +53,7 @@ func makeDelayedReminderHandler(deps DelayedReminderHandler) asynq.HandlerFunc {
 			slog.Error(errCreating.Error())
 		}
 
-		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true})
+		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true}, nil)
 
 		return nil
 	}
