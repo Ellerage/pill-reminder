@@ -53,7 +53,7 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 		select {
 		case update := <-updates:
 			if update.Message != nil {
-				b.handleMessage(update.Message)
+				b.HandleMessage(update.Message)
 			}
 		case <-ctx.Done():
 			slog.Info("Bot listener stopped")

@@ -10,10 +10,16 @@ import (
 	"strings"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 func (b *BotService) cleanReminder(chatId int64) error {
 	cronId, err := b.reminderService.GetFollowupCronIdByChatId(chatId)
+
+	if errors.Is(err, redis.Nil) {
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
@@ -42,7 +48,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 
 		cleanReminderErr := b.cleanReminder(message.Chat.ID)
 		if cleanReminderErr != nil {
-			slog.Error(cleanReminderErr.Error())
+			return cleanReminderErr
 		}
 
 		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
@@ -53,6 +59,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		cleanReminderErr := b.cleanReminder(message.Chat.ID)
 		if cleanReminderErr != nil {
 			slog.Error(cleanReminderErr.Error())
+			return cleanReminderErr
 		}
 
 		_, err := b.reminderQueue.RegisterDelayed(message.Chat.ID)

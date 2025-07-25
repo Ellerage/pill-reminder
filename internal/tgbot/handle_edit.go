@@ -55,7 +55,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	}
 
 	if parseErr != nil {
-		slog.Error(parseErr.Error())
+		return parseErr
 	}
 
 	dailyCronId, followUpCronId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)

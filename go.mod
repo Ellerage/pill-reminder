@@ -8,7 +8,9 @@ require (
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/nicksnyder/go-i18n/v2 v2.6.0
+	github.com/redis/go-redis/v9 v9.11.0
 	github.com/stretchr/testify v1.10.0
+	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/mongodb v0.37.0
 	go.mongodb.org/mongo-driver v1.13.1
 	golang.org/x/text v0.26.0
@@ -54,12 +56,10 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/redis/go-redis/v9 v9.11.0 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/cast v1.9.2 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/testcontainers/testcontainers-go v0.37.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -88,7 +88,6 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.2.2
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect
 )
