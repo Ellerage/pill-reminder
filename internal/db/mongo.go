@@ -19,12 +19,7 @@ type ConnectMongoOptions struct {
 
 func ConnectMongo(connectOptions ConnectMongoOptions) *mongo.Database {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	creds := options.Credential{
-		Username:   connectOptions.UserName,
-		Password:   connectOptions.Password,
-		AuthSource: "admin",
-	}
-	opts := options.Client().ApplyURI(connectOptions.Uri).SetServerAPIOptions(serverAPI).SetAuth(creds)
+	opts := options.Client().ApplyURI(connectOptions.Uri).SetServerAPIOptions(serverAPI)
 
 	client, err := mongo.Connect(opts)
 
