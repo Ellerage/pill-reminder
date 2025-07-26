@@ -14,6 +14,10 @@ func (b *BotService) handleUserCreate(chatId int64) error {
 		return err
 	}
 
-	b.SendMessage(chatId, i18n.GetText("initialTime"), nil, nil)
+	err = b.SendMessage(chatId, i18n.GetText("initialTime"), nil, nil)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

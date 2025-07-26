@@ -53,7 +53,10 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 		select {
 		case update := <-updates:
 			if update.Message != nil {
-				b.HandleMessage(update.Message)
+				err := b.HandleMessage(update.Message)
+				if err != nil {
+					b.SendMessage(update.Message.Chat.ID, err.Error(), nil, nil)
+				}
 			}
 		case <-ctx.Done():
 			slog.Info("Bot listener stopped")
@@ -62,9 +65,9 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 	}
 }
 
-func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons, options *MessageOptions) {
+func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons, options *MessageOptions) error {
 	msg := tg.NewMessage(chatID, message)
-	replyButtons := make([]tg.KeyboardButton, 0, 2)
+	replyButtons := make([]tg.KeyboardButton, 0, 4)
 
 	if options != nil {
 		if options.ParseMode != nil {
@@ -73,9 +76,11 @@ func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.Se
 	}
 
 	if buttons != nil {
+		if buttons.Create {
+			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionCreate)))
+		}
 		if buttons.Take {
 			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionTake)))
-
 		}
 		if buttons.Edit {
 			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionEdit)))
@@ -94,6 +99,9 @@ func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.Se
 	}
 
 	if _, err := b.api.Send(msg); err != nil {
-		slog.Error("Send message", "err", err)
+		slog.Error(err.Error())
+		return err
 	}
+
+	return nil
 }

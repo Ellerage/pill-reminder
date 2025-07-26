@@ -1,7 +1,6 @@
 package tgbot
 
 import (
-	"errors"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
@@ -29,8 +28,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	isMinutes := intParseError == nil
 
 	if !isMinutes && !isTime && !isTimezone {
-		b.SendMessage(message.Chat.ID, i18n.GetText("notValidTime"), nil, nil)
-		return errors.New("invalid input")
+		return utils.ErrInvalidTimeEditInput
 	}
 
 	var parseErr error
@@ -66,13 +64,13 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	// TODO: add unregister by slice
 	if dailyCronId != "" {
 		if err := b.reminderQueue.Unregister(dailyCronId); err != nil {
-			slog.Error(err.Error())
+			slog.Warn(err.Error())
 		}
 	}
 
 	if followUpCronId != "" {
 		if err := b.reminderQueue.Unregister(followUpCronId); err != nil {
-			slog.Error(err.Error())
+			slog.Warn(err.Error())
 		}
 	}
 
@@ -95,7 +93,10 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+	err = b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -106,6 +106,8 @@ func (q *ReminderQueue) RegisterSchedule(cronSpec string, taskType enums.QueueEv
 		return "", registerErr
 	}
 
+	slog.Info(fmt.Sprintf("Register Schedule spec: %s. Task type %s. Id: %s", cronSpec, string(taskType), cronId))
+
 	return cronId, nil
 }
 
@@ -119,7 +121,7 @@ func (q *ReminderQueue) RegisterDelayed(chatId int64) (string, error) {
 		return "", err
 	}
 
-	timeToWait := asynq.ProcessIn(3 * time.Minute)
+	timeToWait := asynq.ProcessIn(60 * time.Minute)
 	info, err := q.Client.Enqueue(asynq.NewTask(string(enums.ReminderEventDelayed), data), timeToWait)
 	if err != nil {
 		return "", err
@@ -134,7 +136,7 @@ func (q *ReminderQueue) Unregister(cronId string) error {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("Cron ID: %s - was removed", cronId))
+	slog.Info(fmt.Sprintf("Unregistered Schedule %s", cronId))
 
 	return nil
 }

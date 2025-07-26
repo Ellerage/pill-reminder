@@ -3,6 +3,7 @@ package schedulehandlers
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils/enums"
@@ -31,6 +32,7 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 		}
 
 		if isTaken {
+			slog.Info("Already taken")
 			return nil
 		}
 
@@ -46,7 +48,10 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 			return errCreating
 		}
 
-		deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true}, nil)
+		err = deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true}, nil)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	}

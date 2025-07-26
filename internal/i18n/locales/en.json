@@ -46,5 +46,9 @@
   {
     "id": "delayReminder",
     "translation": "Reminder notifications paused for a hour"
+  },
+  {
+    "id": "noAccount",
+    "translation": "Looks like you didn't setup your account. Please send /start to continue"
   }
 ]

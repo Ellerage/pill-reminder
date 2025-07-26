@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"pill-reminder/internal/utils/enums"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func (m *MockReminderRepo) GetFollowupCronIdByChatId(chatId int64) (string, erro
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockReminderRepo) CreateOrUpdate(chatId int64, cronId string, notificationType string) error {
+func (m *MockReminderRepo) CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error {
 	args := m.Called(chatId, cronId, notificationType)
 	return args.Error(0)
 }
@@ -102,7 +103,7 @@ func TestCreateOrUpdate_Success(t *testing.T) {
 
 	chatID := int64(301)
 	cronID := "cron123"
-	nType := "main"
+	nType := enums.ReminderTypeDaily
 	r.On("CreateOrUpdate", chatID, cronID, nType).Return(nil)
 
 	err := svc.CreateOrUpdate(chatID, cronID, nType)
@@ -117,7 +118,7 @@ func TestCreateOrUpdate_Error(t *testing.T) {
 
 	chatID := int64(302)
 	cronID := "cronErr"
-	nType := "followup"
+	nType := enums.ReminderTypeFollowup
 	expectedErr := errors.New("create error")
 	r.On("CreateOrUpdate", chatID, cronID, nType).Return(expectedErr)
 
