@@ -68,9 +68,12 @@ func main() {
 	botAPI, err := tg.NewBotAPI(cfg.BOT_TOKEN)
 	if err != nil {
 		panic(err)
+	} else {
+		botAPI.Debug = false
+		runes := []rune(cfg.BOT_TOKEN)
+		last4 := string(runes[len(runes)-4:])
+		slog.Info("Bot started with: ****" + last4)
 	}
-
-	botAPI.Debug = false
 
 	botService := tgbot.NewBotService(tgbot.BotServiceParams{
 		Timezone:        cfg.TIMEZONE,

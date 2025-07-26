@@ -11,16 +11,16 @@ import (
 
 type Config struct {
 	BOT_TOKEN                  string `env:"BOT_TOKEN" env-default:""`
-	MONGO_URL                  string `env:"MONGO_URL" env-default:""`
-	MONGO_DB_NAME              string `env:"MONGO_DB_NAME" env-default:""`
-	TIMEZONE                   string `env:"TIMEZONE" env-default:""`
-	REDIS_URL                  string `env:"REDIS_URL" env-default:""`
+	MONGO_URL                  string `env:"MONGO_URL" env-default:"mongodb://localhost:27017/bill-reminder"`
+	MONGO_DB_NAME              string `env:"MONGO_DB_NAME" env-default:"bill-reminder"`
+	TIMEZONE                   string `env:"TIMEZONE" env-default:"UTC"`
+	REDIS_URL                  string `env:"REDIS_URL" env-default:"localhost"`
 	REDIS_PASSWORD             string `env:"REDIS_PASSWORD" env-default:""`
-	ASYNCQ_DB                  int    `env:"ASYNCQ_DB" env-default:""`
-	REDIS_PORT                 int    `env:"REDIS_PORT" env-default:""`
-	REMINDER_DB                int    `env:"REMINDER_DB" env-default:""`
-	MONGO_INITDB_ROOT_USERNAME string `env:"MONGO_INITDB_ROOT_USERNAME" env-default:""`
-	MONGO_INITDB_ROOT_PASSWORD string `env:"MONGO_INITDB_ROOT_PASSWORD" env-default:""`
+	ASYNCQ_DB                  int    `env:"ASYNCQ_DB" env-default:"0"`
+	REDIS_PORT                 int    `env:"REDIS_PORT" env-default:"6379"`
+	REMINDER_DB                int    `env:"REMINDER_DB" env-default:"1"`
+	MONGO_INITDB_ROOT_USERNAME string `env:"MONGO_INITDB_ROOT_USERNAME" env-default:"root"`
+	MONGO_INITDB_ROOT_PASSWORD string `env:"MONGO_INITDB_ROOT_PASSWORD" env-default:"admin"`
 }
 
 var (
@@ -34,6 +34,8 @@ func InitConfig() *Config {
 
 		if err != nil {
 			slog.Error("No .env file found (optional)")
+		} else {
+			slog.Info("Loaded .env file")
 		}
 
 		cfg = &Config{}
