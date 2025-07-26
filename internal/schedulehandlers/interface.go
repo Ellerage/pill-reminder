@@ -11,7 +11,7 @@ type ReminderQueueService interface {
 }
 
 type TgBot interface {
-	SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons, options *tgbot.MessageOptions)
+	SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons, options *tgbot.MessageOptions) error
 }
 
 type PillDayService interface {

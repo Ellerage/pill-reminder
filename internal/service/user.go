@@ -38,7 +38,7 @@ func (s *UserService) Create(chatId int64, toCreate model.UserCreate) error {
 	} else if err != nil {
 		return err
 	} else {
-		return errors.New("user already exist")
+		return utils.ErrUserAlreadyExist
 	}
 }
 

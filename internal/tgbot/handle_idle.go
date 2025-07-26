@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
 	"strings"
 
@@ -16,17 +17,13 @@ import (
 func (b *BotService) cleanReminder(chatId int64) error {
 	cronId, err := b.reminderService.GetFollowupCronIdByChatId(chatId)
 
-	if errors.Is(err, redis.Nil) {
-		return nil
-	}
-
-	if err != nil {
+	if err != nil && !errors.Is(err, redis.Nil) {
 		return err
 	}
 
 	errRemoveByChatId := b.reminderQueue.Unregister(cronId)
 	if errRemoveByChatId != nil {
-		return errRemoveByChatId
+		slog.Warn(errRemoveByChatId.Error())
 	}
 
 	_, deleteErr := b.reminderService.DeleteByChatId(chatId, true)
@@ -42,7 +39,6 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
 
 		if err != nil {
-			b.SendMessage(message.Chat.ID, i18n.GetText("tryAgain"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
 			return err
 		}
 
@@ -51,7 +47,11 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return cleanReminderErr
 		}
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		err = b.SendMessage(message.Chat.ID, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
 
@@ -67,7 +67,11 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return err
 		}
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		err = b.SendMessage(message.Chat.ID, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}
 
@@ -76,11 +80,15 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		err := b.userService.Update(message.Chat.ID, model.UserUpdate{Status: &status})
 		// TODO: Should I clean up schedule on changing status to edit?
 		if err != nil {
-			slog.Error(err.Error())
 			return err
 		}
 
-		b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		err = b.SendMessage(message.Chat.ID, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	if message.Text == string(enums.ActionMySetting) {
@@ -100,8 +108,13 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		)
 		parseMode := "HTML"
 
-		b.SendMessage(message.Chat.ID, text, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: &parseMode})
+		err = b.SendMessage(message.Chat.ID, text, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: &parseMode})
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
-	return errors.New("invalid")
+	return utils.ErrUserAlreadyExist
 }

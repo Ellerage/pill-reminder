@@ -11,7 +11,8 @@ const (
 )
 
 type SendMessageButtons struct {
-	Take  bool
-	Edit  bool
-	Delay bool
+	Take   bool
+	Edit   bool
+	Delay  bool
+	Create bool
 }

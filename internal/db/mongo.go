@@ -37,9 +37,9 @@ func ConnectMongo(connectOptions ConnectMongoOptions) *mongo.Database {
 
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		panic(err)
+	} else {
+		slog.Info("Successfully connected to MongoDB!")
 	}
-
-	slog.Info("Successfully connected to MongoDB!")
 
 	return client.Database(connectOptions.DBName)
 }
