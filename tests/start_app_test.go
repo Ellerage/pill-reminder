@@ -10,9 +10,7 @@ import (
 	"testing"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestStartAppAndNotifications(t *testing.T) {
@@ -55,15 +53,7 @@ func TestStartAppAndNotifications(t *testing.T) {
 	}
 
 	for i := range 2 {
-		select {
-		case ch := <-modules.BotAPI.SendCalls:
-			msg, ok := ch.(tgbotapi.MessageConfig)
-			require.True(t, ok, "expected MessageConfig, got %T", ch)
-			assert.Equal(t, userChatId, msg.ChatID)
-			assert.Contains(t, expected[i], msg.Text)
-		case <-time.After(time.Minute * 1):
-			t.Fatal("Timeout")
-		}
+		utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Minute*1, expected[i])
 	}
 
 	message := utils.GenerateMessage(userChatId, string(enums.ActionTake))
@@ -79,15 +69,7 @@ func TestStartAppAndNotifications(t *testing.T) {
 
 	assert.True(t, pillDay.HasTimeOfTaking())
 
-	select {
-	case ch := <-modules.BotAPI.SendCalls:
-		msg, ok := ch.(tgbotapi.MessageConfig)
-		require.True(t, ok, "expected MessageConfig, got %T", ch)
-		assert.Equal(t, userChatId, msg.ChatID)
-		assert.Contains(t, i18n.GetText("checked"), msg.Text)
-	case <-time.After(time.Minute * 1):
-		t.Fatal("Timeout")
-	}
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Minute*1, i18n.GetText("checked"))
 
 	select {
 	case <-modules.BotAPI.SendCalls:

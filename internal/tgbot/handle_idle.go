@@ -37,7 +37,6 @@ func (b *BotService) cleanReminder(chatId int64) error {
 func (b *BotService) handleIdleMessages(message *tg.Message) error {
 	if message.Text == string(enums.ActionTake) {
 		err := b.pillDayService.MarkAsTakenNow(message.Chat.ID)
-
 		if err != nil {
 			return err
 		}

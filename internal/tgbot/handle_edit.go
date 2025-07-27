@@ -25,15 +25,15 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	isTime := timeRegex.MatchString(message.Text)
 	isTimezone := utils.IsValidTimezone(message.Text)
 	minutes, intParseError := strconv.ParseUint(message.Text, 10, 8)
-	isMinutes := intParseError == nil
+	isReminderInterval := intParseError == nil
 
-	if !isMinutes && !isTime && !isTimezone {
+	if !isReminderInterval && !isTime && !isTimezone {
 		return utils.ErrInvalidTimeEditInput
 	}
 
 	var parseErr error
 
-	if isMinutes {
+	if isReminderInterval {
 		remindInterval := uint8(minutes)
 		remindIntervalCron = utils.GetCronFromMinutes(remindInterval)
 
@@ -83,8 +83,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, enums.ReminderEventDaily, model.DailyReminderPayload{ChatId: message.Chat.ID, RemindInterval: userData.UserRepeatInterval})
-
+	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, enums.ReminderEventDaily, model.DailyReminderPayload{ChatId: message.Chat.ID, RemindInterval: remindIntervalCron})
 	if cronRegisterErr != nil {
 		return cronRegisterErr
 	}

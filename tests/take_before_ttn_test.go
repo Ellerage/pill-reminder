@@ -8,9 +8,7 @@ import (
 	"testing"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTakeBeforeTimeToNotify(t *testing.T) {
@@ -33,29 +31,24 @@ func TestTakeBeforeTimeToNotify(t *testing.T) {
 		UserService:          modules.UserService,
 	})
 
+	// Mark as taken
 	message := utils.GenerateMessage(user.ChatId, string(enums.ActionTake))
 	err = modules.Bot.HandleMessage(message)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
+	// Check updated
 	pillDayActual, err := utils.GetPillDayByChatId(modules.DB, user.ChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-
 	assert.True(t, pillDayActual.HasTimeOfTaking())
 
-	select {
-	case ch := <-modules.BotAPI.SendCalls:
-		msg, ok := ch.(tgbotapi.MessageConfig)
-		require.True(t, ok, "expected MessageConfig, got %T", ch)
-		assert.Equal(t, user.ChatId, msg.ChatID)
-		assert.Contains(t, i18n.GetText("checked"), msg.Text)
-	case <-time.After(time.Second * 10):
-		t.Fatal("Timeout")
-	}
+	// check reply for Checked message
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, time.Second*10, i18n.GetText("checked"))
 
+	// Check that notifications was stopped
 	select {
 	case <-modules.BotAPI.SendCalls:
 		t.Fatal("Notifications didn't stop")
