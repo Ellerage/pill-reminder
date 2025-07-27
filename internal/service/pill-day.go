@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"log/slog"
 	"pill-reminder/internal/utils"
 	"time"
 
@@ -24,19 +23,21 @@ func (s *PillDayService) Create(chatId int64, timeOfTaking *time.Time) error {
 func (s *PillDayService) MarkAsTakenNow(chatId int64) error {
 	dateTime := utils.GetNowDateTime()
 
-	_, err := s.pillDayRepo.GetByDateAndChatId(chatId, dateTime)
-
-	var resultError error
+	pillDay, err := s.pillDayRepo.GetByDateAndChatId(chatId, dateTime)
 
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		resultError = s.pillDayRepo.Create(chatId, &dateTime)
-	} else if err == nil {
-		resultError = s.pillDayRepo.UpdateTimeByDate(chatId, dateTime)
-	} else {
-		slog.Error(err.Error())
+		return s.pillDayRepo.Create(chatId, &dateTime)
 	}
 
-	return resultError
+	if err != nil {
+		return err
+	}
+
+	if pillDay.HasTimeOfTaking() {
+		return utils.ErrAlreadyTakenToday
+	}
+
+	return s.pillDayRepo.UpdateTimeByDate(chatId, dateTime)
 }
 
 func (s *PillDayService) IsTakenToday(chatId int64) (bool, error) {

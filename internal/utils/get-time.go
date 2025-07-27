@@ -10,7 +10,6 @@ const TimezoneDefault = "UTC"
 
 func GetNowDateTime() time.Time {
 	loc, err := time.LoadLocation(TimezoneDefault)
-
 	if err != nil {
 		panic(err)
 	}
