@@ -1,9 +1,5 @@
 [
   {
-    "id": "tryAgain",
-    "translation": "Try again"
-  },
-  {
     "id": "initialTime",
     "translation": "⏰ What time should I send you reminders? Format: 15:04 (HH:MM)"
   },
@@ -50,5 +46,21 @@
   {
     "id": "noAccount",
     "translation": "Looks like you didn't setup your account. Please send /start to continue"
+  },
+  {
+    "id": "tryAgain",
+    "translation": "Something went wrong. Try again"
+  },
+  {
+    "id": "pillAlreadyTaken",
+    "translation": "Pill already was taken"
+  },
+  {
+    "id": "ErrInvalidTimeEditInput",
+    "translation": "Enter time as HH:MM, Timezone like Asia/Tbilisi or reminder interval as number to edit"
+  },
+  {
+    "id": "accountAlreadyExist",
+    "translation": "You already have an account"
   }
 ]

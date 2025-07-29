@@ -2,10 +2,14 @@ package tgbot
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"pill-reminder/internal/i18n"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type BotService struct {
@@ -53,9 +57,24 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 		select {
 		case update := <-updates:
 			if update.Message != nil {
+				chatId := update.Message.Chat.ID
 				err := b.HandleMessage(update.Message)
-				if err != nil {
-					b.SendMessage(update.Message.Chat.ID, err.Error(), nil, nil)
+
+				switch {
+				case errors.Is(err, mongo.ErrNoDocuments):
+					b.SendMessage(chatId, i18n.GetText("noAccount"), &enums.SendMessageButtons{Create: true}, nil)
+				case errors.Is(err, utils.ErrInvalidCommand):
+					b.SendInfoMessage(chatId)
+				case errors.Is(err, utils.ErrUserAlreadyExist):
+					b.SendMessage(chatId, i18n.GetText("accountAlreadyExist"), nil, nil)
+					b.SendInfoMessage(chatId)
+				case errors.Is(err, utils.ErrAlreadyTakenToday):
+					b.SendMessage(chatId, i18n.GetText("pillAlreadyTaken"), nil, nil)
+				case errors.Is(err, utils.ErrInvalidTimeEditInput):
+					b.SendMessage(chatId, i18n.GetText("ErrInvalidTimeEditInput"), nil, nil)
+				case err != nil:
+					b.SendMessage(update.Message.Chat.ID, i18n.GetText("tryAgain"), nil, nil)
+				default:
 				}
 			}
 		case <-ctx.Done():
@@ -67,7 +86,7 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 
 func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.SendMessageButtons, options *MessageOptions) error {
 	msg := tg.NewMessage(chatID, message)
-	replyButtons := make([]tg.KeyboardButton, 0, 4)
+	replyButtons := make([]tg.KeyboardButton, 0, 10)
 
 	if options != nil {
 		if options.ParseMode != nil {

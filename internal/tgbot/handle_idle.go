@@ -115,5 +115,5 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		return nil
 	}
 
-	return utils.ErrUserAlreadyExist
+	return utils.ErrInvalidCommand
 }
