@@ -31,17 +31,16 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	}
 
 	var parseErr error
-
 	if isReminderInterval {
 		toUpdate.RemindInterval = &minutes
 		messageToSend = i18n.GetText("repeatIntervalTimeUpdated")
 	} else if isTime {
-		timeToNotify, parseErr = utils.GetUTCFromUserTime(message.Text, userData.UserTimezone)
+		timeToNotify, parseErr = utils.GetUTCFromUserTime(message.Text, *userData.UserTimezone)
 
 		toUpdate.TimeToNotify = &timeToNotify
 		messageToSend = i18n.GetText("firstAtDayNotificationTimeUpdated")
 	} else if isTimezone {
-		timeToNotify, parseErr = utils.GetUTCFromUserTime(userData.UserTimeToNotify, &message.Text)
+		timeToNotify, parseErr = utils.GetUTCFromUserTime(timeToNotify, message.Text)
 
 		toUpdate.TimeToNotify = &timeToNotify
 		toUpdate.Timezone = &message.Text
@@ -74,7 +73,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	cronStr, err := utils.GetDailyCronFromStringTime(timeToNotify)
+	cronStr, err := utils.GetCronFromStringUTCTime(timeToNotify)
 	if err != nil {
 		return err
 	}

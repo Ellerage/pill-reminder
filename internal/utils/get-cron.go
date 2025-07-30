@@ -11,14 +11,11 @@ func GetCronFromMinutes(minutes uint8) string {
 	return cronStr
 }
 
-func GetDailyCronFromStringTime(timeStr string) (string, error) {
-	validTime, err := time.Parse("15:04", timeStr)
-
+func GetCronFromStringUTCTime(timeStr string) (string, error) {
+	parsed, err := time.ParseInLocation("15:04", timeStr, time.UTC)
 	if err != nil {
 		return "", err
 	}
 
-	cron := fmt.Sprintf("%d %d * * *", validTime.Minute(), validTime.Hour())
-
-	return cron, nil
+	return fmt.Sprintf("%d %d * * *", parsed.Minute(), parsed.Hour()), nil
 }
