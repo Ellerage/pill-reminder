@@ -12,7 +12,6 @@ import (
 
 func TestMarkAsTakenFlow(t *testing.T) {
 	modules, teardown := utils.Setup(t)
-	defer teardown()
 	user := seeds.UserSeed(modules.DB, seeds.UserParams{})
 	chatId := user.ChatId
 
@@ -27,4 +26,5 @@ func TestMarkAsTakenFlow(t *testing.T) {
 
 	assert.NotNil(t, actualPillDay.Date)
 	assert.NotEmpty(t, actualPillDay.Date)
+	t.Cleanup(teardown)
 }

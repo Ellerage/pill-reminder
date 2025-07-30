@@ -24,11 +24,15 @@ func RegisterHandlers(params HandlersParams) error {
 		reminderQueue:        params.ReminderQueue,
 		tgBot:                params.TgBot,
 		pillDayService:       params.PillDayService,
+		userService:          params.UserService,
 	}))
 
 	mux.HandleFunc(string(enums.ReminderEventFollowup), makeFollowupReminderHandle(FollowupHandler{
-		tgBot:          params.TgBot,
-		pillDayService: params.PillDayService,
+		tgBot:                params.TgBot,
+		pillDayService:       params.PillDayService,
+		reminderQueue:        params.ReminderQueue,
+		reminderQueueService: params.ReminderQueueService,
+		userService:          params.UserService,
 	}))
 
 	mux.HandleFunc(string(enums.ReminderEventDelayed), makeDelayedReminderHandler(DelayedReminderHandler{

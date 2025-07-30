@@ -7,8 +7,7 @@ type QueueReminder struct {
 }
 
 type DailyReminderPayload struct {
-	RemindInterval string
-	ChatId         int64
+	ChatId int64
 }
 
 type FollowUpReminderPayload struct {

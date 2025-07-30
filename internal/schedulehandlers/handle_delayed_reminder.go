@@ -7,6 +7,7 @@ import (
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils/enums"
+	"time"
 
 	"github.com/hibiken/asynq"
 )
@@ -42,7 +43,7 @@ func makeDelayedReminderHandler(deps DelayedReminderHandler) asynq.HandlerFunc {
 			return err
 		}
 
-		cronId, err := deps.reminderQueue.RegisterSchedule(user.RemindInterval, enums.ReminderEventFollowup, payload)
+		cronId, err := deps.reminderQueue.RegisterFollowup(payload.ChatId, time.Duration(user.RemindInterval)*time.Minute)
 		if err != nil {
 			slog.Error(err.Error())
 		}

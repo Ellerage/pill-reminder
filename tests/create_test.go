@@ -10,7 +10,6 @@ import (
 
 func TestCreateFlow(t *testing.T) {
 	modules, teardown := utils.Setup(t)
-	defer teardown()
 
 	fakeChatId := gofakeit.Int64()
 	message := utils.GenerateMessage(fakeChatId, "/start")
@@ -23,4 +22,6 @@ func TestCreateFlow(t *testing.T) {
 	}
 
 	assert.Equal(t, fakeChatId, user.ChatId)
+
+	t.Cleanup(teardown)
 }

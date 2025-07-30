@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"pill-reminder/internal/model"
-	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
 	"testing"
 
@@ -88,7 +87,7 @@ func TestUserService_Create_Success(t *testing.T) {
 		Timezone:       fakeUser.Timezone,
 		TimeToNotify:   fakeUser.TimeToNotify,
 		Status:         fakeUser.Status,
-		RemindInterval: gofakeit.Uint8(),
+		RemindInterval: gofakeit.Int64(),
 	}
 
 	expectedUser := model.User{
@@ -96,7 +95,7 @@ func TestUserService_Create_Success(t *testing.T) {
 		Timezone:       toCreate.Timezone,
 		TimeToNotify:   toCreate.TimeToNotify,
 		Status:         toCreate.Status,
-		RemindInterval: utils.GetCronFromMinutes(toCreate.RemindInterval),
+		RemindInterval: toCreate.RemindInterval,
 	}
 
 	mockRepo.
@@ -192,7 +191,7 @@ func TestUserService_Create_Error(t *testing.T) {
 		Timezone:       fakeUser.Timezone,
 		TimeToNotify:   fakeUser.TimeToNotify,
 		Status:         fakeUser.Status,
-		RemindInterval: gofakeit.Uint8(),
+		RemindInterval: gofakeit.Int64(),
 	}
 
 	err := svc.Create(fakeUser.ChatId, toCreate)

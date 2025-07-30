@@ -3,9 +3,12 @@ package schedulehandlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils/enums"
+	"time"
 
 	"github.com/hibiken/asynq"
 )
@@ -15,6 +18,7 @@ type DailyReminderHandler struct {
 	reminderQueueService ReminderQueueService
 	tgBot                TgBot
 	pillDayService       PillDayService
+	userService          UserService
 }
 
 func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
@@ -31,22 +35,27 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 		}
 
 		if isTaken {
+			slog.Info("Pill was already taken today")
 			return nil
 		}
 
-		payload := model.FollowUpReminderPayload{ChatId: parsed.ChatId}
-		cronId, err := deps.reminderQueue.RegisterSchedule(parsed.RemindInterval, enums.ReminderEventFollowup, payload)
+		user, err := deps.userService.GetByChatId(parsed.ChatId)
 		if err != nil {
 			return err
 		}
 
-		errCreating := deps.reminderQueueService.CreateOrUpdate(parsed.ChatId, cronId, enums.ReminderTypeFollowup)
+		cronId, err := deps.reminderQueue.RegisterFollowup(parsed.ChatId, time.Duration(user.RemindInterval)*time.Minute)
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
 
+		errCreating := deps.reminderQueueService.CreateOrUpdate(parsed.ChatId, cronId, enums.ReminderTypeFollowup)
 		if errCreating != nil {
 			return errCreating
 		}
 
-		err = deps.tgBot.SendMessage(payload.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true}, nil)
+		err = deps.tgBot.SendMessage(parsed.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true}, nil)
 		if err != nil {
 			return err
 		}

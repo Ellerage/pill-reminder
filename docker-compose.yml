@@ -17,14 +17,6 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
-  mongo-express:
-    image: mongo-express:1.0.0-alpha.4
-    container_name: mongo-express
-    restart: always
-    ports:
-      - "8081:8081"
-    depends_on:
-      - mongodb
 volumes:
   redis-data:
   mongo-data:

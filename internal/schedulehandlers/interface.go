@@ -4,6 +4,7 @@ import (
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/tgbot"
 	"pill-reminder/internal/utils/enums"
+	"time"
 )
 
 type ReminderQueueService interface {
@@ -20,6 +21,7 @@ type PillDayService interface {
 
 type ReminderQueue interface {
 	RegisterSchedule(cronSpec string, taskType enums.QueueEventsEnum, taskPayload any) (string, error)
+	RegisterFollowup(chatId int64, interval time.Duration) (string, error)
 }
 
 type UserService interface {
