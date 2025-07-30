@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	utilscommon "pill-reminder/internal/utils"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,27 +27,10 @@ func TestStartAppAndNotifications(t *testing.T) {
 		slog.Error(err.Error())
 	}
 
-	remindIntervalMinutes := uint8(1)
-	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{TimeToNotify: &timeToNotifyUTC, RemindIntervalMinutes: &remindIntervalMinutes})
+	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{TimeToNotify: &timeToNotifyUTC})
 	userChatId := userSeed.ChatId
 
-	users, err := modules.UserService.GetAll()
-	if err != nil {
-		slog.Error(err.Error())
-	}
-
-	err = modules.ReminderQueue.Start(users)
-	if err != nil {
-		panic(err)
-	}
-
-	utils.StartScheduleHandlers(utils.StartScheduleHandlersParams{
-		ReminderQueue:        modules.ReminderQueue,
-		ReminderQueueService: modules.ReminderQueueService,
-		Bot:                  modules.Bot,
-		PillDayService:       modules.PillDayService,
-		UserService:          modules.UserService,
-	})
+	utils.InitScheduleForAllUsers(utils.StartScheduleHandlersParams{ReminderQueue: modules.ReminderQueue, UserService: modules.UserService})
 
 	expected := []string{
 		i18n.GetText("firstNotification"),
@@ -72,12 +57,12 @@ func TestStartAppAndNotifications(t *testing.T) {
 	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Minute*1, i18n.GetText("checked"))
 
 	select {
-	case <-modules.BotAPI.SendCalls:
+	case v := <-modules.BotAPI.SendCalls:
+		msg, _ := v.(tgbotapi.MessageConfig)
+		fmt.Println(msg.Text)
 		t.Fatal("Notifications didn't stop")
 	case <-time.After(2 * time.Minute):
 	}
 
-	t.Cleanup(func() {
-		teardown()
-	})
+	t.Cleanup(teardown)
 }

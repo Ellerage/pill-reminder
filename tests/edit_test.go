@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/utils/enums"
 	"pill-reminder/tests/seeds"
@@ -16,7 +15,6 @@ import (
 
 func TestEnterEditingState(t *testing.T) {
 	modules, teardown := utils.Setup(t)
-	defer teardown()
 
 	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{})
 	userChatId := userSeed.ChatId
@@ -31,11 +29,11 @@ func TestEnterEditingState(t *testing.T) {
 	assert.Equal(t, string(enums.UserStatusEditing), user2.Status)
 
 	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*5, i18n.GetText("enterNewTime"))
+	t.Cleanup(teardown)
 }
 
 func TestEditTimeToNotify(t *testing.T) {
 	modules, teardown := utils.Setup(t)
-	defer teardown()
 
 	status := string(enums.UserStatusEditing)
 	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{Status: &status})
@@ -53,18 +51,15 @@ func TestEditTimeToNotify(t *testing.T) {
 
 	assert.Equal(t, newTimeToNotify, updatedUser.TimeToNotify)
 	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*5, i18n.GetText("firstAtDayNotificationTimeUpdated"))
+	t.Cleanup(teardown)
 }
 
 func TestEditTimeAndReminderNotifications(t *testing.T) {
 	modules, teardown := utils.Setup(t)
-	defer teardown()
 
 	utils.InitScheduleForAllUsers(utils.StartScheduleHandlersParams{
-		ReminderQueue:        modules.ReminderQueue,
-		ReminderQueueService: modules.ReminderQueueService,
-		Bot:                  modules.Bot,
-		PillDayService:       modules.PillDayService,
-		UserService:          modules.UserService,
+		ReminderQueue: modules.ReminderQueue,
+		UserService:   modules.UserService,
 	})
 
 	status := string(enums.UserStatusEditing)
@@ -81,18 +76,18 @@ func TestEditTimeAndReminderNotifications(t *testing.T) {
 	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Minute*2, i18n.GetText("firstNotification"))
 
 	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Minute*2, i18n.GetText("reminderNotification"))
+	t.Cleanup(teardown)
 }
 
 func TestEditRemindInterval(t *testing.T) {
 	modules, teardown := utils.Setup(t)
-	defer teardown()
 
 	status := string(enums.UserStatusEditing)
 	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{Status: &status})
 	userChatId := userSeed.ChatId
 
-	expectedRemindIntervalMinutes := strconv.Itoa(gofakeit.Minute())
-	messageNewRemindInterval := utils.GenerateMessage(userChatId, expectedRemindIntervalMinutes)
+	expectedRemindIntervalMinutes := gofakeit.Minute()
+	messageNewRemindInterval := utils.GenerateMessage(userChatId, strconv.Itoa(expectedRemindIntervalMinutes))
 	modules.Bot.HandleMessage(messageNewRemindInterval)
 
 	updatedRemindIntervalUser, err := utils.GetUserByChatId(modules.DB, userChatId)
@@ -100,8 +95,7 @@ func TestEditRemindInterval(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	expected := fmt.Sprintf("*/%s * * * *", expectedRemindIntervalMinutes)
-
-	assert.Equal(t, expected, updatedRemindIntervalUser.RemindInterval)
+	assert.Equal(t, int64(expectedRemindIntervalMinutes), updatedRemindIntervalUser.RemindInterval)
 	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*5, i18n.GetText("repeatIntervalTimeUpdated"))
+	t.Cleanup(teardown)
 }

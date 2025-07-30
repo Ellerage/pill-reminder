@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/utils/enums"
 	"pill-reminder/tests/seeds"
@@ -8,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,11 +26,8 @@ func TestTakeBeforeTimeToNotify(t *testing.T) {
 	})
 
 	utils.InitScheduleForAllUsers(utils.StartScheduleHandlersParams{
-		ReminderQueue:        modules.ReminderQueue,
-		ReminderQueueService: modules.ReminderQueueService,
-		Bot:                  modules.Bot,
-		PillDayService:       modules.PillDayService,
-		UserService:          modules.UserService,
+		ReminderQueue: modules.ReminderQueue,
+		UserService:   modules.UserService,
 	})
 
 	// Mark as taken
@@ -50,12 +49,12 @@ func TestTakeBeforeTimeToNotify(t *testing.T) {
 
 	// Check that notifications was stopped
 	select {
-	case <-modules.BotAPI.SendCalls:
+	case v := <-modules.BotAPI.SendCalls:
+		msg, _ := v.(tgbotapi.MessageConfig)
+		fmt.Println(msg.Text)
 		t.Fatal("Notifications didn't stop")
 	case <-time.After(2 * time.Minute):
 	}
 
-	t.Cleanup(func() {
-		teardown()
-	})
+	t.Cleanup(teardown)
 }

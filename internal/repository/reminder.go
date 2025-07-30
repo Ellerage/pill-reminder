@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"pill-reminder/internal/utils/enums"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -66,7 +67,6 @@ func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string,
 
 func (repo *ReminderQueueRepository) DeleteByChatId(chatId int64, onlyFollowUp bool) (int64, error) {
 	toDelete := []string{fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeFollowup)}
-
 	if !onlyFollowUp {
 		toDelete = append(toDelete, fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeDaily))
 	}
@@ -74,12 +74,12 @@ func (repo *ReminderQueueRepository) DeleteByChatId(chatId int64, onlyFollowUp b
 	result := repo.db.Del(context.TODO(), toDelete...)
 
 	deleted, err := result.Result()
-
 	if err != nil {
 		return 0, err
 	}
 
-	slog.Info(fmt.Sprintf("Removed crons for chat id: %d. Amount: %d", chatId, deleted))
+	deletedKeys := strings.Join(toDelete, " | ")
+	slog.Info(fmt.Sprintf("Removed crons for chat id: %d. Amount: %d. Keys: %s", chatId, deleted, deletedKeys))
 
 	return deleted, nil
 }

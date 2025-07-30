@@ -18,13 +18,12 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	idleStatus := string(enums.UserStatusIdle)
 	var toUpdate = model.UserUpdate{Status: &idleStatus}
 	timeToNotify := userData.UserTimeToNotify
-	remindIntervalCron := userData.UserRepeatInterval
 
 	messageToSend := ""
 
 	isTime := timeRegex.MatchString(message.Text)
 	isTimezone := utils.IsValidTimezone(message.Text)
-	minutes, intParseError := strconv.ParseUint(message.Text, 10, 8)
+	minutes, intParseError := strconv.ParseInt(message.Text, 10, 64)
 	isReminderInterval := intParseError == nil
 
 	if !isReminderInterval && !isTime && !isTimezone {
@@ -34,10 +33,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	var parseErr error
 
 	if isReminderInterval {
-		remindInterval := uint8(minutes)
-		remindIntervalCron = utils.GetCronFromMinutes(remindInterval)
-
-		toUpdate.RemindInterval = &remindIntervalCron
+		toUpdate.RemindInterval = &minutes
 		messageToSend = i18n.GetText("repeatIntervalTimeUpdated")
 	} else if isTime {
 		timeToNotify, parseErr = utils.GetUTCFromUserTime(message.Text, userData.UserTimezone)
@@ -83,7 +79,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, enums.ReminderEventDaily, model.DailyReminderPayload{ChatId: message.Chat.ID, RemindInterval: remindIntervalCron})
+	cronId, cronRegisterErr := b.reminderQueue.RegisterSchedule(cronStr, enums.ReminderEventDaily, model.DailyReminderPayload{ChatId: message.Chat.ID})
 	if cronRegisterErr != nil {
 		return cronRegisterErr
 	}

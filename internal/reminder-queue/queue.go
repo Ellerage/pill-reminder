@@ -75,7 +75,7 @@ func (q *ReminderQueue) Start(users []model.User) error {
 		timeToNotify := utils.GetTimeFromString(user.TimeToNotify)
 		cronStr := fmt.Sprintf("%d %d * * *", timeToNotify.Minute(), timeToNotify.Hour())
 
-		data := model.DailyReminderPayload{ChatId: user.ChatId, RemindInterval: user.RemindInterval}
+		data := model.DailyReminderPayload{ChatId: user.ChatId}
 
 		id, err := q.RegisterSchedule(cronStr, enums.ReminderEventDaily, data)
 
@@ -109,6 +109,29 @@ func (q *ReminderQueue) RegisterSchedule(cronSpec string, taskType enums.QueueEv
 	slog.Info(fmt.Sprintf("Register Schedule spec: %s. Task type %s. Id: %s", cronSpec, string(taskType), cronId))
 
 	return cronId, nil
+}
+
+func (q *ReminderQueue) RegisterFollowup(chatId int64, interval time.Duration) (string, error) {
+	payload := model.FollowUpReminderPayload{
+		ChatId: chatId,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	task := asynq.NewTask(string(enums.ReminderEventFollowup), data)
+	timeToWait := asynq.ProcessIn(interval)
+
+	info, err := q.Client.Enqueue(task, timeToWait)
+	if err != nil {
+		return "", err
+	}
+
+	slog.Info(fmt.Sprintf("Register Follow up task: %s. Interval %f minutes", info.ID, interval.Minutes()))
+
+	return info.ID, err
 }
 
 func (q *ReminderQueue) RegisterDelayed(chatId int64) (string, error) {

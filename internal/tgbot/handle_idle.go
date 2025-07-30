@@ -8,7 +8,6 @@ import (
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
-	"strings"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/redis/go-redis/v9"
@@ -96,13 +95,11 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return err
 		}
 
-		minutes := strings.TrimPrefix(strings.Split(user.RemindInterval, " ")[0], "*/") + " Minutes"
-
 		text := fmt.Sprintf(
 			"<b>User ID:</b> %d\n<b>Time to notify:</b> %s\n<b>Remind interval:</b> %s\n<b>Timezone:</b> %s",
 			user.ChatId,
 			user.TimeToNotify,
-			minutes,
+			fmt.Sprintf("%d Minutes", user.RemindInterval),
 			user.Timezone,
 		)
 		parseMode := "HTML"

@@ -9,7 +9,7 @@ import (
 type HandleTimeEditing struct {
 	UserTimezone       *string
 	UserTimeToNotify   string
-	UserRepeatInterval string
+	UserRepeatInterval int64
 }
 
 func (b *BotService) HandleMessage(message *tg.Message) error {

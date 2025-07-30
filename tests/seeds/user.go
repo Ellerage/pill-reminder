@@ -2,7 +2,6 @@ package seeds
 
 import (
 	"context"
-	"fmt"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils/enums"
 
@@ -13,16 +12,14 @@ import (
 type UserParams struct {
 	TimeToNotify          *string
 	Status                *string
-	RemindIntervalMinutes *uint8
+	RemindIntervalMinutes *int64
 }
 
 func UserSeed(db *mongo.Database, initial UserParams) model.User {
-	var remindInterval string
+	remindInterval := int64(1)
 
 	if initial.RemindIntervalMinutes != nil {
-		remindInterval = fmt.Sprintf("*/%d * * * *", *initial.RemindIntervalMinutes)
-	} else {
-		remindInterval = fmt.Sprintf("*/%d * * * *", 1)
+		remindInterval = *initial.RemindIntervalMinutes
 	}
 
 	user := model.User{
