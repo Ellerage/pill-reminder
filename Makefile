@@ -8,7 +8,7 @@ test-i:
 	go test -v ./tests/...
 
 build_prod:
-	GOOS=linux GOARCH=amd64 go build -o pill-reminder ./cmd
+	GOOS=linux GOARCH=amd64 go build -a -o pill-reminder ./cmd
 
 lint:
 	golangci-lint run --fix
