@@ -62,5 +62,9 @@
   {
     "id": "accountAlreadyExist",
     "translation": "You already have an account"
+  },
+  {
+    "id": "undoneTaken",
+    "translation": "Today was unmarked as taken"
   }
 ]

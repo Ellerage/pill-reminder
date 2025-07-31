@@ -12,6 +12,7 @@ var titleInfo = []string{
 var commandsInfo = []string{
 	"/start - Create account",
 	"Take - Mark day as taken",
+	"Undo - Undo mark as taken today",
 	"Edit - change notification settings",
 	"Settings - show user settings",
 }

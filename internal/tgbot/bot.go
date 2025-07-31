@@ -107,6 +107,7 @@ func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.Se
 		if buttons.Delay {
 			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionDelay)))
 		}
+
 	}
 
 	if len(replyButtons) > 0 {

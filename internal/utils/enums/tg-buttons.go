@@ -8,6 +8,7 @@ const (
 	ActionDelay     Actions = "Delay"
 	ActionCreate    Actions = "/start"
 	ActionMySetting Actions = "Settings"
+	ActionUndo      Actions = "Undo"
 )
 
 type SendMessageButtons struct {
@@ -15,4 +16,5 @@ type SendMessageButtons struct {
 	Edit   bool
 	Delay  bool
 	Create bool
+	Undo   bool
 }

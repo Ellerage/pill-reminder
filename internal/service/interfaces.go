@@ -10,6 +10,7 @@ type PillDayRepository interface {
 	Create(chatId int64, time *time.Time) error
 	GetByDateAndChatId(chatID int64, date time.Time) (*model.PillDay, error)
 	UpdateTimeByDate(chatID int64, dateTime time.Time) error
+	UnsetTodayByChatId(chatId int64) error
 }
 
 type UserRepository interface {

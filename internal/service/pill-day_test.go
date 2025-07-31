@@ -42,6 +42,12 @@ func (m *MockPillDayRepo) UpdateTimeByDate(chatId int64, time time.Time) error {
 	return args.Error(0)
 }
 
+func (m *MockPillDayRepo) UnsetTodayByChatId(chatId int64) error {
+	args := m.Called(chatId)
+
+	return args.Error(0)
+}
+
 func Test_Create_Success(t *testing.T) {
 	mockRepo := new(MockPillDayRepo)
 	service := NewPillDayService(mockRepo)
