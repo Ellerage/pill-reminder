@@ -40,6 +40,10 @@ func (s *PillDayService) MarkAsTakenNow(chatId int64) error {
 	return s.pillDayRepo.UpdateTimeByDate(chatId, dateTime)
 }
 
+func (s *PillDayService) UndoAsTakenToday(chatId int64) error {
+	return s.pillDayRepo.UnsetTodayByChatId(chatId)
+}
+
 func (s *PillDayService) IsTakenToday(chatId int64) (bool, error) {
 	date := utils.GetNowDateTime()
 

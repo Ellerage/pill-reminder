@@ -37,7 +37,6 @@ var bot *tgbot.BotService
 var botApi *mocks.BotAPI
 
 func Setup(t *testing.T) (Return, func()) {
-
 	return Return{
 			Bot:                  bot,
 			PillDayService:       pillDayService,
@@ -48,14 +47,6 @@ func Setup(t *testing.T) (Return, func()) {
 			Redis:                testsdb.RedisClient,
 			BotAPI:               botApi,
 		}, func() {
-			// reminderQueue.Scheduler.Shutdown()
-			// time.Sleep(2 * time.Second)
-
-			// reminderQueue.Server.Shutdown()
-			// time.Sleep(2 * time.Second)
-
-			// reminderQueue.Client.Close()
-
 			botApi.ClearMessages()
 			CleanupDB()
 		}
