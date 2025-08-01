@@ -55,7 +55,7 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 			return errCreating
 		}
 
-		err = deps.tgBot.SendMessage(parsed.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Edit: true, Take: true, Delay: true}, nil)
+		err = deps.tgBot.SendMessage(parsed.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Take: true, Delay: true}, nil)
 		if err != nil {
 			return err
 		}

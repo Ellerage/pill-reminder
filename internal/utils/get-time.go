@@ -44,6 +44,29 @@ func GetUTCFromUserTime(timeStr string, userTimeZone string) (string, error) {
 	).UTC().Format("15:04"), nil
 }
 
+func GetUserTimeFromUTC(timeStr string, userTimeZone string) (string, error) {
+	parsed, err := time.ParseInLocation("15:04", timeStr, time.UTC)
+	if err != nil {
+		return "", err
+	}
+
+	userLoc, err := time.LoadLocation(userTimeZone)
+	if err != nil {
+		return "", err
+	}
+
+	now := time.Now().In(time.UTC)
+
+	userTime := time.Date(
+		now.Year(), now.Month(), now.Day(),
+		parsed.Hour(), parsed.Minute(),
+		0, 0,
+		time.UTC,
+	).In(userLoc)
+
+	return userTime.Format("15:04"), nil
+}
+
 func GetTimeFromString(str string) time.Time {
 	parsed, err := time.ParseInLocation("15:04", str, time.UTC)
 	if err != nil {
