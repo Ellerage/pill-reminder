@@ -35,8 +35,9 @@ type ReminderQueue struct {
 }
 
 func NewReminderQueue(deps ReminderQueueDeps) *ReminderQueue {
+	addr := net.JoinHostPort(deps.RedisConnectionOptions.RedisAddr, strconv.Itoa(deps.RedisConnectionOptions.RedisPort))
 	opt := asynq.RedisClientOpt{
-		Addr:     net.JoinHostPort(deps.RedisConnectionOptions.RedisAddr, strconv.Itoa(deps.RedisConnectionOptions.RedisPort)),
+		Addr:     addr,
 		Password: deps.RedisConnectionOptions.RedisPwd,
 		DB:       deps.RedisConnectionOptions.RedisDB,
 	}
@@ -45,20 +46,22 @@ func NewReminderQueue(deps ReminderQueueDeps) *ReminderQueue {
 	server := asynq.NewServer(
 		opt,
 		asynq.Config{
-			Concurrency: 10,
+			Concurrency: 1,
 		},
 	)
-	serverPingErr := server.Ping()
-	if serverPingErr != nil {
+	scheduler := asynq.NewScheduler(opt, nil)
+
+	if serverPingErr := server.Ping(); serverPingErr != nil {
 		panic(serverPingErr)
 	}
-
-	scheduler := asynq.NewScheduler(opt, nil)
-	schedulerPingErr := scheduler.Ping()
-
-	if schedulerPingErr != nil {
+	if clientPingErr := server.Ping(); clientPingErr != nil {
+		panic(clientPingErr)
+	}
+	if schedulerPingErr := scheduler.Ping(); schedulerPingErr != nil {
 		panic(schedulerPingErr)
 	}
+
+	slog.Info(fmt.Sprintf("Connected to queue with:  Addr: %s, DB: %d", addr, deps.RedisConnectionOptions.RedisDB))
 
 	return &ReminderQueue{
 		Client:    client,

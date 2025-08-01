@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
+	"strconv"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -16,15 +19,22 @@ type ConnectRedisOptions struct {
 }
 
 func ConnectRedis(ctx context.Context, options ConnectRedisOptions) *redis.Client {
+	addr := net.JoinHostPort(options.Addr, strconv.Itoa(options.Port))
+
 	var rdb = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%d", options.Addr, options.Port),
-		Password: options.Password,
-		DB:       options.DB,
+		Addr:         addr,
+		Password:     options.Password,
+		DB:           options.DB,
+		DialTimeout:  5 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
+		PoolSize:     5,
+		MinIdleConns: 2,
 	})
 
 	status := rdb.Ping(ctx)
 
-	slog.Info("Redis connect: " + status.String())
+	slog.Info(fmt.Sprintf("Redis connect: %s. With: Addr: %s. DB: %v", status.String(), addr, options.DB))
 
 	return rdb
 }
