@@ -78,10 +78,15 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return err
 		}
 
+		timeToNotify, err := utils.GetUserTimeFromUTC(user.TimeToNotify, user.Timezone)
+		if err != nil {
+			return err
+		}
+
 		text := fmt.Sprintf(
 			"<b>User ID:</b> %d\n<b>Time to notify:</b> %s\n<b>Remind interval:</b> %s\n<b>Timezone:</b> %s",
 			user.ChatId,
-			user.TimeToNotify,
+			timeToNotify,
 			fmt.Sprintf("%d Minutes", user.RemindInterval),
 			user.Timezone,
 		)
