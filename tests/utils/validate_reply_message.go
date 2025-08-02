@@ -17,7 +17,7 @@ func ValidateReplyMessage(t *testing.T, SendCalls chan tgbotapi.Chattable, userC
 		fmt.Println("Channel message: ", msg.Text)
 		require.True(t, ok, "expected MessageConfig, got %T", ch)
 		assert.Equal(t, userChatId, msg.ChatID)
-		assert.Contains(t, text, msg.Text)
+		assert.Contains(t, msg.Text, text)
 	case <-time.After(timeout):
 		t.Fatal("Timeout")
 	}

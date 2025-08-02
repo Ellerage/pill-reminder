@@ -2,7 +2,6 @@ package tgbot
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
@@ -78,21 +77,13 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return err
 		}
 
-		timeToNotify, err := utils.GetUserTimeFromUTC(user.TimeToNotify, user.Timezone)
-		if err != nil {
-			return err
-		}
+		text := utils.GetSettingsReplyText(model.UserNotificationSettings{
+			TimeToNotify:   user.TimeToNotify,
+			Timezone:       user.Timezone,
+			RemindInterval: user.RemindInterval,
+		})
 
-		text := fmt.Sprintf(
-			"<b>User ID:</b> %d\n<b>Time to notify:</b> %s\n<b>Remind interval:</b> %s\n<b>Timezone:</b> %s",
-			user.ChatId,
-			timeToNotify,
-			fmt.Sprintf("%d Minutes", user.RemindInterval),
-			user.Timezone,
-		)
-		parseMode := "HTML"
-
-		err = b.SendMessage(chatId, text, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: &parseMode})
+		err = b.SendMessage(chatId, text, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: "HTML"})
 		if err != nil {
 			return err
 		}
