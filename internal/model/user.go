@@ -24,6 +24,12 @@ type UserCreate struct {
 	RemindInterval int64  `bson:"remindInterval"`
 }
 
+type UserNotificationSettings struct {
+	Timezone       string `bson:"timezone"`
+	TimeToNotify   string `bson:"timeToNotify"`
+	RemindInterval int64  `bson:"remindInterval"`
+}
+
 func (u *UserCreate) GetDefaultUser(timezone string) UserCreate {
 	return UserCreate{
 		Timezone:       timezone,

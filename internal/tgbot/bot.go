@@ -31,7 +31,7 @@ type BotServiceParams struct {
 }
 
 type MessageOptions struct {
-	ParseMode *string
+	ParseMode string
 }
 
 func NewBotService(params BotServiceParams) *BotService {
@@ -89,8 +89,8 @@ func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.Se
 	replyButtons := make([]tg.KeyboardButton, 0, 10)
 
 	if options != nil {
-		if options.ParseMode != nil {
-			msg.ParseMode = *options.ParseMode
+		if options.ParseMode != "" {
+			msg.ParseMode = options.ParseMode
 		}
 	}
 

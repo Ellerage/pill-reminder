@@ -51,6 +51,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return parseErr
 	}
 
+	// Clean up
 	dailyCronId, followUpCronId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)
 	if err != nil {
 		return err
@@ -69,10 +70,12 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		}
 	}
 
+	// Update user settings
 	if err := b.userService.Update(message.Chat.ID, toUpdate); err != nil {
 		return err
 	}
 
+	// New queue task
 	cronStr, err := utils.GetCronFromStringUTCTime(timeToNotify)
 	if err != nil {
 		return err
@@ -87,7 +90,28 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	err = b.SendMessage(message.Chat.ID, messageToSend, &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+	// Response
+	user, err := b.userService.GetByChatId(message.Chat.ID)
+	if err != nil {
+		return err
+	}
+
+	userTimeToNotify, err := utils.GetUserTimeFromUTC(user.TimeToNotify, user.Timezone)
+	if err != nil {
+		return err
+	}
+
+	actualUserSettings := utils.GetSettingsReplyText(
+		model.UserNotificationSettings{
+			Timezone:       user.Timezone,
+			TimeToNotify:   userTimeToNotify,
+			RemindInterval: user.RemindInterval,
+		},
+	)
+
+	replyText := messageToSend + "\n" + actualUserSettings
+
+	err = b.SendMessage(message.Chat.ID, replyText, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: "HTML"})
 	if err != nil {
 		return err
 	}

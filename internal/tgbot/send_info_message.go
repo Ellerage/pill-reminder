@@ -20,8 +20,7 @@ var commandsInfo = []string{
 func (b *BotService) SendInfoMessage(chatId int64) error {
 	message := append(titleInfo, commandsInfo...)
 
-	parseMode := "HTML"
-	err := b.SendMessage(chatId, strings.Join(message, "\n"), &enums.SendMessageButtons{}, &MessageOptions{ParseMode: &parseMode})
+	err := b.SendMessage(chatId, strings.Join(message, "\n"), &enums.SendMessageButtons{}, &MessageOptions{ParseMode: "HTML"})
 
 	return err
 }
