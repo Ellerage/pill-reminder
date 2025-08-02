@@ -74,7 +74,6 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 					b.SendMessage(chatId, i18n.GetText("ErrInvalidTimeEditInput"), nil, nil)
 				case err != nil:
 					b.SendMessage(update.Message.Chat.ID, i18n.GetText("tryAgain"), nil, nil)
-				default:
 				}
 			}
 		case <-ctx.Done():
