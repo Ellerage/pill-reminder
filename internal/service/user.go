@@ -43,5 +43,9 @@ func (s *UserService) Create(chatId int64, toCreate model.UserCreate) error {
 }
 
 func (s *UserService) Update(chatId int64, toUpdate model.UserUpdate) error {
+	if toUpdate.RemindInterval != nil && *toUpdate.RemindInterval < int64(1) {
+		return utils.ErrInvalidReminderInterval
+	}
+
 	return s.userRepo.Update(chatId, toUpdate)
 }

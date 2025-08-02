@@ -3,6 +3,7 @@ package i18n
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -39,4 +40,14 @@ func GetText(id string) string {
 	}
 
 	return msg
+}
+
+func Plural(value int, singleValue string) string {
+	pluralStr := singleValue
+
+	if value > 1 {
+		pluralStr = pluralStr + "s"
+	}
+
+	return fmt.Sprintf("%d %s", value, pluralStr)
 }
