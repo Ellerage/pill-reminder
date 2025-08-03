@@ -84,6 +84,11 @@ func main() {
 		ReminderService: reminderQueueService,
 	})
 
+	err = botService.Init()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
 	// Initialize schedule for users
 	users, err := userService.GetAll()
 	if err != nil {

@@ -8,12 +8,10 @@ import (
 )
 
 func (b *BotService) SendInfoMessage(chatId int64) error {
-	var commandsInfo = []string{
-		fmt.Sprintf("%s - %s", enums.ActionCommandCreate, i18n.GetText("availableCommandsCreate")),
-		fmt.Sprintf("%s - %s", enums.ActionCommandTake, i18n.GetText("availableCommandsTake")),
-		fmt.Sprintf("%s - %s", enums.ActionCommandUndo, i18n.GetText("availableCommandsUndo")),
-		fmt.Sprintf("%s - %s", enums.ActionCommandEdit, i18n.GetText("availableCommandsEdit")),
-		fmt.Sprintf("%s - %s", enums.ActionCommandSettings, i18n.GetText("availableCommandsSettings")),
+	var commandsInfo = []string{}
+
+	for _, command := range GetBotCommands() {
+		commandsInfo = append(commandsInfo, fmt.Sprintf("%s - %s", command.Command, command.Description))
 	}
 
 	message := append([]string{i18n.GetText("availableCommandsTitle")}, commandsInfo...)

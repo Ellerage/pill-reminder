@@ -9,6 +9,7 @@ import (
 	"pill-reminder/internal/utils/enums"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
@@ -43,6 +44,17 @@ func NewBotService(params BotServiceParams) *BotService {
 		reminderQueue:   params.ReminderQueue,
 		reminderService: params.ReminderService,
 	}
+}
+
+func (b *BotService) Init() error {
+	commands := GetBotCommands()
+
+	cfg := tgbotapi.NewSetMyCommands(commands...)
+	if _, err := b.api.Request(cfg); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (b *BotService) RegisterMessageListener(ctx context.Context) {
@@ -87,6 +99,9 @@ func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.Se
 	msg := tg.NewMessage(chatID, message)
 	replyButtons := make([]tg.KeyboardButton, 0, 10)
 
+	// tg.BotCommand{
+	// 	Command: "help", Description: "",
+	// }
 	if options != nil {
 		if options.ParseMode != "" {
 			msg.ParseMode = options.ParseMode
