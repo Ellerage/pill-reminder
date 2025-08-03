@@ -116,7 +116,7 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 
 	replyText := messageToSend + "\n" + actualUserSettings
 
-	err = b.SendMessage(message.Chat.ID, replyText, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: "HTML"})
+	err = b.SendMessage(message.Chat.ID, replyText, &enums.SendMessageButtons{Take: true}, &MessageOptions{ParseMode: "HTML"})
 	if err != nil {
 		return err
 	}

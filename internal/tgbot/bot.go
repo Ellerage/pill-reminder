@@ -99,9 +99,6 @@ func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.Se
 	msg := tg.NewMessage(chatID, message)
 	replyButtons := make([]tg.KeyboardButton, 0, 10)
 
-	// tg.BotCommand{
-	// 	Command: "help", Description: "",
-	// }
 	if options != nil {
 		if options.ParseMode != "" {
 			msg.ParseMode = options.ParseMode
@@ -115,13 +112,9 @@ func (b *BotService) SendMessage(chatID int64, message string, buttons *enums.Se
 		if buttons.Take {
 			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionTake)))
 		}
-		if buttons.Edit {
-			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionEdit)))
-		}
 		if buttons.Delay {
 			replyButtons = append(replyButtons, tg.NewKeyboardButton(string(enums.ActionDelay)))
 		}
-
 	}
 
 	if len(replyButtons) > 0 {
