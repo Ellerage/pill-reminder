@@ -1,6 +1,7 @@
 package tgbot
 
 import (
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -15,7 +16,7 @@ type HandleTimeEditing struct {
 func (b *BotService) HandleMessage(message *tg.Message) error {
 	chatId := message.Chat.ID
 
-	if message.Text == string(enums.ActionCreate) {
+	if utils.HandleCommandMessage(message.Text, enums.ActionCommandCreate) {
 		err := b.handleUserCreate(chatId)
 		return err
 	}

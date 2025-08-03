@@ -16,7 +16,7 @@ import (
 func (b *BotService) handleIdleMessages(message *tg.Message) error {
 	chatId := message.Chat.ID
 
-	if message.Text == string(enums.ActionTake) {
+	if utils.HandleCommandMessage(message.Text, enums.ActionCommandTake) {
 		err := b.pillDayService.MarkAsTakenNow(chatId)
 		if err != nil {
 			return err
@@ -35,7 +35,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		return nil
 	}
 
-	if message.Text == string(enums.ActionDelay) {
+	if utils.HandleCommandMessage(message.Text, enums.ActionCommandDelay) {
 		cleanReminderErr := b.cleanReminder(chatId)
 		if cleanReminderErr != nil {
 			slog.Error(cleanReminderErr.Error())
@@ -60,7 +60,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		return nil
 	}
 
-	if message.Text == string(enums.ActionEdit) {
+	if utils.HandleCommandMessage(message.Text, enums.ActionCommandEdit) {
 		status := string(enums.UserStatusEditing)
 		err := b.userService.Update(chatId, model.UserUpdate{Status: &status})
 		// TODO: Should I clean up schedule on changing status to edit?
@@ -76,7 +76,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		return nil
 	}
 
-	if message.Text == string(enums.ActionMySetting) {
+	if utils.HandleCommandMessage(message.Text, enums.ActionCommandSettings) {
 		user, err := b.userService.GetByChatId(chatId)
 		if err != nil {
 			return err
@@ -96,7 +96,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 		return nil
 	}
 
-	if message.Text == string(enums.ActionUndo) {
+	if utils.HandleCommandMessage(message.Text, enums.ActionCommandUndo) {
 		user, err := b.userService.GetByChatId(chatId)
 		if err != nil {
 			return err
