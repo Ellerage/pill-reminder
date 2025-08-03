@@ -27,7 +27,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return cleanReminderErr
 		}
 
-		err = b.SendMessage(chatId, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		err = b.SendMessage(chatId, i18n.GetText("checked"), &enums.SendMessageButtons{Take: true}, nil)
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return err
 		}
 
-		err = b.SendMessage(chatId, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		err = b.SendMessage(chatId, i18n.GetText("delayReminder"), &enums.SendMessageButtons{Take: true}, nil)
 		if err != nil {
 			return err
 		}
@@ -68,7 +68,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return err
 		}
 
-		err = b.SendMessage(chatId, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true, Edit: true}, nil)
+		err = b.SendMessage(chatId, i18n.GetText("enterNewTime"), &enums.SendMessageButtons{Take: true}, nil)
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			RemindInterval: user.RemindInterval,
 		})
 
-		err = b.SendMessage(chatId, text, &enums.SendMessageButtons{Take: true, Edit: true}, &MessageOptions{ParseMode: "HTML"})
+		err = b.SendMessage(chatId, text, &enums.SendMessageButtons{Take: true}, &MessageOptions{ParseMode: "HTML"})
 		if err != nil {
 			return err
 		}
