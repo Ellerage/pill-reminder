@@ -11,6 +11,7 @@ import (
 type BotAPI interface {
 	Send(tg.Chattable) (tg.Message, error)
 	GetUpdatesChan(config tg.UpdateConfig) tg.UpdatesChannel
+	Request(c tg.Chattable) (*tg.APIResponse, error)
 }
 
 type UserService interface {
