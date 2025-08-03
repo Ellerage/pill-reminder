@@ -10,12 +10,8 @@ func NewReminderQueueService(repo ReminderQueueRepository) *ReminderQueueService
 	return &ReminderQueueService{notificationQueueRepository: repo}
 }
 
-func (s *ReminderQueueService) GetCronIdByChatId(chatId int64) (string, string, error) {
+func (s *ReminderQueueService) GetCronIdByChatId(chatId int64) (string, string, string, error) {
 	return s.notificationQueueRepository.GetCronIdByChatId(chatId)
-}
-
-func (s *ReminderQueueService) GetFollowupCronIdByChatId(chatId int64) (string, error) {
-	return s.notificationQueueRepository.GetFollowupCronIdByChatId(chatId)
 }
 
 func (s *ReminderQueueService) CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error {

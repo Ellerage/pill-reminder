@@ -42,7 +42,12 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 			return cleanReminderErr
 		}
 
-		_, err := b.reminderQueue.RegisterDelayed(chatId)
+		taskId, err := b.reminderQueue.RegisterDelayed(chatId)
+		if err != nil {
+			return err
+		}
+
+		err = b.reminderService.CreateOrUpdate(chatId, taskId, enums.ReminderTypeDelayed)
 		if err != nil {
 			return err
 		}
@@ -126,15 +131,20 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 }
 
 func (b *BotService) cleanReminder(chatId int64) error {
-	cronId, err := b.reminderService.GetFollowupCronIdByChatId(chatId)
+	_, followUpTaskId, delayedTaskId, err := b.reminderService.GetCronIdByChatId(chatId)
 
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return err
 	}
 
-	errRemoveByChatId := b.reminderQueue.Unregister(cronId)
-	if errRemoveByChatId != nil {
-		slog.Warn(errRemoveByChatId.Error())
+	err = b.reminderQueue.Unregister(followUpTaskId, enums.ReminderTypeFollowup)
+	if err != nil {
+		slog.Warn(err.Error())
+	}
+
+	err = b.reminderQueue.Unregister(delayedTaskId, enums.ReminderTypeDelayed)
+	if err != nil {
+		slog.Warn(err.Error())
 	}
 
 	_, deleteErr := b.reminderService.DeleteByChatId(chatId, true)

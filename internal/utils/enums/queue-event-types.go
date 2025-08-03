@@ -12,4 +12,5 @@ const (
 const (
 	ReminderTypeDaily    ReminderType = "Daily"
 	ReminderTypeFollowup ReminderType = "Followup"
+	ReminderTypeDelayed  ReminderType = "Delayed"
 )
