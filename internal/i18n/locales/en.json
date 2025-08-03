@@ -66,5 +66,29 @@
   {
     "id": "undoneTaken",
     "translation": "Today was unmarked as taken 🔄"
+  },
+  {
+    "id": "availableCommandsTitle",
+    "translation": "<b>Available options:</b>"
+  },
+  {
+    "id": "availableCommandsCreate", 
+    "translation": "Create account"
+  },
+  {
+    "id": "availableCommandsTake", 
+    "translation": "Mark day as taken"
+  },
+  {
+    "id": "availableCommandsUndo", 
+    "translation": "Undo mark as taken today"
+  },
+  {
+    "id": "availableCommandsEdit", 
+    "translation": "Change notification settings"
+  },
+  {
+    "id": "availableCommandsSettings", 
+    "translation": "Show user settings"
   }
 ]
