@@ -25,8 +25,7 @@ type PillDayService interface {
 }
 
 type ReminderService interface {
-	GetCronIdByChatId(chatId int64) (string, string, error)
-	GetFollowupCronIdByChatId(chatId int64) (string, error)
+	GetCronIdByChatId(chatId int64) (string, string, string, error)
 	CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error
 	DeleteByChatId(chatId int64, onlyFollowUp bool) (int64, error)
 }
@@ -35,5 +34,5 @@ type ReminderQueue interface {
 	RegisterSchedule(cronSpec string, taskType enums.QueueEventsEnum, taskPayload any) (string, error)
 	RegisterDelayed(chatId int64) (string, error)
 	RegisterFollowup(chatId int64, interval time.Duration) (string, error)
-	Unregister(cronId string) error
+	Unregister(taskId string, reminderType enums.ReminderType) error
 }

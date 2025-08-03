@@ -31,6 +31,7 @@ type ReminderQueue struct {
 	Client    *asynq.Client
 	Server    *asynq.Server
 	Scheduler *asynq.Scheduler
+	Inspector *asynq.Inspector
 	deps      ReminderQueueDeps
 }
 
@@ -42,6 +43,7 @@ func NewReminderQueue(deps ReminderQueueDeps) *ReminderQueue {
 		DB:       deps.RedisConnectionOptions.RedisDB,
 	}
 
+	inspector := asynq.NewInspector(opt)
 	client := asynq.NewClient(opt)
 	server := asynq.NewServer(
 		opt,
@@ -67,6 +69,7 @@ func NewReminderQueue(deps ReminderQueueDeps) *ReminderQueue {
 		Client:    client,
 		Server:    server,
 		Scheduler: scheduler,
+		Inspector: inspector,
 		deps:      deps,
 	}
 }
@@ -156,13 +159,26 @@ func (q *ReminderQueue) RegisterDelayed(chatId int64) (string, error) {
 	return info.ID, err
 }
 
-func (q *ReminderQueue) Unregister(cronId string) error {
-	err := q.Scheduler.Unregister(cronId)
-	if err != nil {
-		return err
+func (q *ReminderQueue) Unregister(taskId string, reminderType enums.ReminderType) error {
+	if reminderType == enums.ReminderTypeDaily {
+		err := q.Scheduler.Unregister(taskId)
+		if err != nil {
+			return err
+		}
+		slog.Info(fmt.Sprintf("Unregistered Schedule %s", taskId))
+
+		return nil
 	}
 
-	slog.Info(fmt.Sprintf("Unregistered Schedule %s", cronId))
+	if reminderType == enums.ReminderTypeFollowup || reminderType == enums.ReminderTypeDelayed {
+		err := q.Inspector.DeleteTask("default", taskId)
+		if err != nil {
+			return err
+		}
+		slog.Info(fmt.Sprintf("Unregistered Schedule %s", taskId))
+
+		return nil
+	}
 
 	return nil
 }

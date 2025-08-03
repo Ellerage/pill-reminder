@@ -52,20 +52,25 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 	}
 
 	// Clean up
-	dailyCronId, followUpCronId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)
+	dailyCronId, followUpTaskId, delayedTaskId, err := b.reminderService.GetCronIdByChatId(message.Chat.ID)
 	if err != nil {
 		return err
 	}
 
-	// TODO: add unregister by slice
 	if dailyCronId != "" {
-		if err := b.reminderQueue.Unregister(dailyCronId); err != nil {
+		if err := b.reminderQueue.Unregister(dailyCronId, enums.ReminderTypeDaily); err != nil {
 			slog.Warn(err.Error())
 		}
 	}
 
-	if followUpCronId != "" {
-		if err := b.reminderQueue.Unregister(followUpCronId); err != nil {
+	if followUpTaskId != "" {
+		if err := b.reminderQueue.Unregister(followUpTaskId, enums.ReminderTypeFollowup); err != nil {
+			slog.Warn(err.Error())
+		}
+	}
+
+	if delayedTaskId != "" {
+		if err := b.reminderQueue.Unregister(delayedTaskId, enums.ReminderTypeDelayed); err != nil {
 			slog.Warn(err.Error())
 		}
 	}

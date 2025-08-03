@@ -19,42 +19,38 @@ func NewQueueRepository(db *redis.Client) *ReminderQueueRepository {
 	return &ReminderQueueRepository{db: db}
 }
 
-func (repo *ReminderQueueRepository) GetCronIdByChatId(chatId int64) (string, string, error) {
-	result := repo.db.MGet(context.Background(), fmt.Sprintf("%d:Daily", chatId), fmt.Sprintf("%d:Followup", chatId))
+func (repo *ReminderQueueRepository) GetCronIdByChatId(chatId int64) (string, string, string, error) {
+	result := repo.db.MGet(
+		context.Background(),
+		fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeDaily),
+		fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeFollowup),
+		fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeDelayed),
+	)
 	cronIds, err := result.Result()
-
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
-	var dailyCronID, followupCronID string
+	var dailyCronID, followupTaskID, delayedTaskId string
 
 	if cronIds[0] != nil {
 		dailyCronID = cronIds[0].(string)
 	}
-
 	if cronIds[1] != nil {
-		followupCronID = cronIds[1].(string)
+		followupTaskID = cronIds[1].(string)
+	}
+	if cronIds[2] != nil {
+		delayedTaskId = cronIds[2].(string)
 	}
 
-	return dailyCronID, followupCronID, nil
-}
-
-func (repo *ReminderQueueRepository) GetFollowupCronIdByChatId(chatId int64) (string, error) {
-	result, err := repo.db.Get(context.Background(), fmt.Sprintf("%d:Followup", chatId)).Result()
-
-	if err != nil {
-		return "", err
-	}
-
-	return result, nil
+	return dailyCronID, followupTaskID, delayedTaskId, nil
 }
 
 func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string, notificationType enums.ReminderType) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	status := repo.db.Set(ctx, fmt.Sprintf("%d:%s", chatId, notificationType), cronId, 0)
+	status := repo.db.Set(ctx, fmt.Sprintf("%d:%s", chatId, notificationType), cronId, time.Hour*24)
 
 	err := status.Err()
 
@@ -66,7 +62,11 @@ func (repo *ReminderQueueRepository) CreateOrUpdate(chatId int64, cronId string,
 }
 
 func (repo *ReminderQueueRepository) DeleteByChatId(chatId int64, onlyFollowUp bool) (int64, error) {
-	toDelete := []string{fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeFollowup)}
+	toDelete := []string{
+		fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeFollowup),
+		fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeDelayed),
+	}
+
 	if !onlyFollowUp {
 		toDelete = append(toDelete, fmt.Sprintf("%d:%s", chatId, enums.ReminderTypeDaily))
 	}
