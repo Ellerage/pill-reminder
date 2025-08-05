@@ -12,23 +12,28 @@ Need to create a `.env` file at the root of the directory you need only BOT_TOKE
 
 ```
 BOT_TOKEN=<CODE>
-MONGO_DB_NAME=bill-reminder
-TIMEZONE=UTC
-MONGO_URL=mongodb://localhost:27017/bill-reminder
-REDIS_URL=localhost
-REDIS_PORT=6379
-REMINDER_DB=1
-ASYNCQ_DB=0
 ```
 
 ## How to start
 
 ```
+docker compose up -d
+
 go mod tidy && make
 ```
 
 ## Deployment
+
 ```
+# Local build
+make build_prod
+
+# Stop
+sudo systemctl stop pill-reminder
+
+# Upload
+scp ./pill-reminder <ssh>
+
 # Update
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
