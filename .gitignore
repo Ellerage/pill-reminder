@@ -2,3 +2,4 @@
 .env-prod
 pill-reminder
 dump.rdb
+pill-reminder.sqlite

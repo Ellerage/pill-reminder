@@ -29,7 +29,7 @@ func TestStartAppAndNotifications(t *testing.T) {
 		slog.Error(err.Error())
 	}
 
-	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{TimeToNotify: &timeToNotifyUTC})
+	userSeed := seeds.UserSeed(modules.DB, &seeds.UserParams{TimeToNotify: &timeToNotifyUTC})
 	userChatId := userSeed.ChatId
 
 	utils.InitScheduleForAllUsers(utils.StartScheduleHandlersParams{ReminderQueue: modules.ReminderQueue, UserService: modules.UserService})
@@ -49,7 +49,7 @@ func TestStartAppAndNotifications(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	pillDay, err := utils.GetPillDayByChatId(modules.DB, userChatId)
+	pillDay, err := seeds.FindPillDayByChatId(t, modules.DB, userChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

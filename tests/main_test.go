@@ -10,9 +10,8 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	teardownMongo := testsdb.SetupMongo()
 	teardownRedis := testsdb.SetupRedis()
-
+	_, teardownSqlLite := testsdb.SetupSQLite()
 	servicesTeardown := utils.Init()
 	i18n.Init()
 
@@ -22,7 +21,8 @@ func TestMain(m *testing.M) {
 	time.Sleep(2 * time.Second)
 
 	teardownRedis()
-	teardownMongo()
+	time.Sleep(2 * time.Second)
+	teardownSqlLite()
 
 	os.Exit(code)
 }

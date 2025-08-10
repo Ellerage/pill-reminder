@@ -2,20 +2,22 @@ package repository
 
 import (
 	"context"
-	"log/slog"
+	"database/sql"
+	"fmt"
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
+	"strings"
 	"time"
 
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
+	"github.com/jmoiron/sqlx"
 )
 
 type UserRepo struct {
-	db *mongo.Database
+	db *sqlx.DB
 }
 
-func NewUserRepo(db *mongo.Database) *UserRepo {
+func NewUserRepo(db *sqlx.DB) *UserRepo {
 	return &UserRepo{db: db}
 }
 
@@ -23,19 +25,30 @@ func (repo *UserRepo) GetAll() ([]model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := repo.db.Collection("users").Find(ctx, bson.M{
-		"status": bson.M{
-			"$ne": string(enums.UserStatusInactive),
-		},
-	})
-
+	rows, err := repo.db.QueryContext(ctx, `SELECT chatId, timeToNotify, timezone, status, remindInterval FROM users WHERE status != ?`, string(enums.UserStatusInactive))
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	users := make([]model.User, 0)
 
-	if err := cursor.All(ctx, &users); err != nil {
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&user.ChatId,
+			&user.TimeToNotify,
+			&user.Timezone,
+			&user.Status,
+			&user.RemindInterval,
+		)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
@@ -46,11 +59,20 @@ func (repo *UserRepo) GetByChatId(chatId int64) (*model.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	row := repo.db.QueryRowContext(ctx, `SELECT chatId, timeToNotify, timezone, status, remindInterval FROM users WHERE chatId = ?`, chatId)
+
 	var user model.User
-
-	err := repo.db.Collection("users").FindOne(ctx, bson.M{"chatId": chatId}).Decode(&user)
-
+	err := row.Scan(
+		&user.ChatId,
+		&user.TimeToNotify,
+		&user.Timezone,
+		&user.Status,
+		&user.RemindInterval,
+	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, utils.ErrNotFound
+		}
 		return nil, err
 	}
 
@@ -61,11 +83,17 @@ func (repo *UserRepo) Create(toCreate model.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := repo.db.Collection("users").InsertOne(ctx, toCreate)
-
-	if err != nil {
-		slog.Error(err.Error())
-	}
+	_, err := repo.db.ExecContext(ctx,
+		`
+			INSERT INTO users (chatId, timezone, timeToNotify, status, remindInterval)
+			VALUES (?, ?, ?, ?, ?)
+		`,
+		toCreate.ChatId,
+		toCreate.Timezone,
+		toCreate.TimeToNotify,
+		toCreate.Status,
+		toCreate.RemindInterval,
+	)
 
 	return err
 }
@@ -74,26 +102,35 @@ func (repo *UserRepo) Update(chatId int64, toUpdate model.UserUpdate) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	set := bson.M{}
+	setClauses := make([]string, 0)
+	args := make([]interface{}, 0)
 
 	if toUpdate.Status != nil {
-		set["status"] = *toUpdate.Status
+		setClauses = append(setClauses, "status = ?")
+		args = append(args, *toUpdate.Status)
 	}
-
 	if toUpdate.Timezone != nil {
-		set["timezone"] = *toUpdate.Timezone
+		setClauses = append(setClauses, "timezone = ?")
+		args = append(args, *toUpdate.Timezone)
 	}
-
 	if toUpdate.TimeToNotify != nil {
-		set["timeToNotify"] = *toUpdate.TimeToNotify
+		setClauses = append(setClauses, "timeToNotify = ?")
+		args = append(args, *toUpdate.TimeToNotify)
 	}
-
 	if toUpdate.RemindInterval != nil {
-		set["remindInterval"] = *toUpdate.RemindInterval
+		setClauses = append(setClauses, "remindInterval = ?")
+		args = append(args, *toUpdate.RemindInterval)
 	}
 
-	_, err := repo.db.Collection("users").UpdateOne(ctx, bson.M{"chatId": chatId}, bson.M{"$set": set})
+	if len(setClauses) == 0 {
+		return nil
+	}
 
+	args = append(args, chatId)
+
+	query := fmt.Sprintf("UPDATE users SET %s WHERE chatId = ?", strings.Join(setClauses, ", "))
+
+	_, err := repo.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}

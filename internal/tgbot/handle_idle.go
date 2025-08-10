@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
@@ -17,13 +18,16 @@ func (b *BotService) handleIdleMessages(message *tg.Message) error {
 	chatId := message.Chat.ID
 
 	if utils.HandleCommandMessage(message.Text, enums.ActionCommandTake) {
+		fmt.Println("Start take")
 		err := b.pillDayService.MarkAsTakenNow(chatId)
 		if err != nil {
+			fmt.Println("markastaken")
 			return err
 		}
 
 		cleanReminderErr := b.cleanReminder(chatId)
 		if cleanReminderErr != nil {
+			fmt.Println("cleanReminder")
 			return cleanReminderErr
 		}
 

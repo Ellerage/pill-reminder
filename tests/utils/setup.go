@@ -13,9 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type Return struct {
@@ -24,7 +23,7 @@ type Return struct {
 	PillDayService       *service.PillDayService
 	ReminderQueueService *service.ReminderQueueService
 	ReminderQueue        *reminderqueue.ReminderQueue
-	DB                   *mongo.Database
+	DB                   *sqlx.DB
 	Redis                *redis.Client
 	BotAPI               *mocks.BotAPI
 }
@@ -43,7 +42,7 @@ func Setup(t *testing.T) (Return, func()) {
 			UserService:          userService,
 			ReminderQueueService: reminderQueueService,
 			ReminderQueue:        reminderQueue,
-			DB:                   testsdb.MongoClient,
+			DB:                   testsdb.SqlLiteClient,
 			Redis:                testsdb.RedisClient,
 			BotAPI:               botApi,
 		}, func() {
@@ -55,9 +54,9 @@ func Setup(t *testing.T) (Return, func()) {
 func Init() func() {
 	fmt.Println("Init services")
 
-	userService = service.NewUserService(repository.NewUserRepo(testsdb.MongoClient))
+	userService = service.NewUserService(repository.NewUserRepo(testsdb.SqlLiteClient))
 	reminderQueueService = service.NewReminderQueueService(repository.NewQueueRepository(testsdb.RedisClient))
-	pillDayService = service.NewPillDayService(repository.NewPillDayRepo(testsdb.MongoClient))
+	pillDayService = service.NewPillDayService(repository.NewPillDayRepo(testsdb.SqlLiteClient))
 	reminderQueue = reminderqueue.NewReminderQueue(
 		reminderqueue.ReminderQueueDeps{
 			ReminderQueueService: reminderQueueService,
@@ -118,24 +117,8 @@ func Init() func() {
 
 func CleanupDB() {
 	FlushRedis(testsdb.RedisClient)
-	ClearMongo(testsdb.MongoClient)
 }
 
 func FlushRedis(client *redis.Client) error {
 	return client.FlushDB(context.Background()).Err()
-}
-
-func ClearMongo(db *mongo.Database) error {
-	ctx := context.Background()
-	collections, err := db.ListCollectionNames(ctx, bson.D{})
-	if err != nil {
-		return err
-	}
-
-	for _, coll := range collections {
-		if err := db.Collection(coll).Drop(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
 }

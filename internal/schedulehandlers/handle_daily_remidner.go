@@ -23,14 +23,17 @@ type DailyReminderHandler struct {
 
 func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
+		slog.Debug("makeDailyReminderHandler")
 		var parsed model.DailyReminderPayload
 
 		if err := json.Unmarshal(t.Payload(), &parsed); err != nil {
+			slog.Error(err.Error())
 			return err
 		}
 
 		isTaken, err := deps.pillDayService.IsTakenToday(parsed.ChatId)
 		if err != nil {
+			slog.Error(err.Error())
 			return err
 		}
 
@@ -41,6 +44,7 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 
 		user, err := deps.userService.GetByChatId(parsed.ChatId)
 		if err != nil {
+			slog.Error(err.Error())
 			return err
 		}
 
@@ -52,11 +56,13 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 
 		errCreating := deps.reminderQueueService.CreateOrUpdate(parsed.ChatId, cronId, enums.ReminderTypeFollowup)
 		if errCreating != nil {
+			slog.Error(errCreating.Error())
 			return errCreating
 		}
 
 		err = deps.tgBot.SendMessage(parsed.ChatId, i18n.GetText("firstNotification"), &enums.SendMessageButtons{Take: true, Delay: true}, nil)
 		if err != nil {
+			slog.Error(err.Error())
 			return err
 		}
 

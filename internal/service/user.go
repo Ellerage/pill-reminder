@@ -4,8 +4,6 @@ import (
 	"errors"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
-
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type UserService struct {
@@ -27,7 +25,7 @@ func (s *UserService) GetByChatId(chatId int64) (*model.User, error) {
 func (s *UserService) Create(chatId int64, toCreate model.UserCreate) error {
 	_, err := s.userRepo.GetByChatId(chatId)
 
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	if errors.Is(err, utils.ErrNotFound) {
 		return s.userRepo.Create(model.User{
 			ChatId:         chatId,
 			Timezone:       toCreate.Timezone,

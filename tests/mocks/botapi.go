@@ -26,3 +26,7 @@ func (a *BotAPI) Send(v tg.Chattable) (tg.Message, error) {
 func (a *BotAPI) GetUpdatesChan(config tg.UpdateConfig) tg.UpdatesChannel {
 	return make(tg.UpdatesChannel)
 }
+
+func (a *BotAPI) Request(c tg.Chattable) (*tg.APIResponse, error) {
+	return &tg.APIResponse{}, nil
+}

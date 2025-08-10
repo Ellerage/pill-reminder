@@ -1,12 +1,15 @@
 package seeds
 
 import (
-	"context"
+	"database/sql"
+	"log/slog"
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
+	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"go.mongodb.org/mongo-driver/v2/mongo"
+	"github.com/jmoiron/sqlx"
 )
 
 type UserParams struct {
@@ -15,12 +18,8 @@ type UserParams struct {
 	RemindIntervalMinutes *int64
 }
 
-func UserSeed(db *mongo.Database, initial UserParams) model.User {
+func UserSeed(db *sqlx.DB, initial *UserParams) model.User {
 	remindInterval := int64(1)
-
-	if initial.RemindIntervalMinutes != nil {
-		remindInterval = *initial.RemindIntervalMinutes
-	}
 
 	user := model.User{
 		ChatId:         gofakeit.Int64(),
@@ -30,15 +29,55 @@ func UserSeed(db *mongo.Database, initial UserParams) model.User {
 		RemindInterval: remindInterval,
 	}
 
-	if initial.TimeToNotify != nil {
-		user.TimeToNotify = *initial.TimeToNotify
+	if initial != nil {
+		if initial.RemindIntervalMinutes != nil {
+			user.RemindInterval = *initial.RemindIntervalMinutes
+		}
+
+		if initial.TimeToNotify != nil {
+			user.TimeToNotify = *initial.TimeToNotify
+		}
+
+		if initial.Status != nil {
+			user.Status = *initial.Status
+		}
 	}
 
-	if initial.Status != nil {
-		user.Status = *initial.Status
-	}
+	_, err := db.Exec("INSERT INTO users (chatId, timezone, timeToNotify, status, remindInterval) VALUES (?, ?, ?, ?, ?)",
+		user.ChatId,
+		user.Timezone,
+		user.TimeToNotify,
+		user.Status,
+		user.RemindInterval,
+	)
 
-	db.Collection("users").InsertOne(context.TODO(), user)
+	if err != nil {
+		slog.Debug(err.Error())
+	}
 
 	return user
+}
+
+func GetUserByChatId(t *testing.T, db *sqlx.DB, chatId int64) (*model.User, error) {
+	row := db.QueryRow("SELECT chatId, timezone, timeToNotify, status, remindInterval FROM users WHERE chatId = ?", chatId)
+
+	var result model.User
+	err := row.Scan(
+		&result.ChatId,
+		&result.Timezone,
+		&result.TimeToNotify,
+		&result.Status,
+		&result.RemindInterval,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, utils.ErrNotFound
+		}
+
+		t.Fatal(err)
+		return nil, err
+	}
+
+	return &result, nil
 }

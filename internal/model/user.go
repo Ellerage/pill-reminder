@@ -3,31 +3,31 @@ package model
 import "pill-reminder/internal/utils/enums"
 
 type User struct {
-	ChatId         int64  `bson:"chatId"`
-	Timezone       string `bson:"timezone"`
-	TimeToNotify   string `bson:"timeToNotify"` // String in 15:04 format
-	Status         string `bson:"status"`
-	RemindInterval int64  `bson:"remindInterval"` // Time in minutes
+	ChatId         int64  `db:"chatId"`
+	Timezone       string `db:"timezone"`
+	TimeToNotify   string `db:"timeToNotify"` // String in 15:04 format
+	Status         string `db:"status"`
+	RemindInterval int64  `db:"remindInterval"` // Time in minutes
 }
 
 type UserUpdate struct {
-	Timezone       *string `bson:"timezone,omitempty"`
-	TimeToNotify   *string `bson:"timeToNotify,omitempty"`
-	Status         *string `bson:"status,omitempty"`
-	RemindInterval *int64  `bson:"remindInterval, omitempty"`
+	Timezone       *string `db:"timezone,omitempty"`
+	TimeToNotify   *string `db:"timeToNotify,omitempty"`
+	Status         *string `db:"status,omitempty"`
+	RemindInterval *int64  `db:"remindInterval, omitempty"`
 }
 
 type UserCreate struct {
-	Timezone       string `bson:"timezone"`
-	TimeToNotify   string `bson:"timeToNotify"`
-	Status         string `bson:"status"`
-	RemindInterval int64  `bson:"remindInterval"`
+	Timezone       string `db:"timezone"`
+	TimeToNotify   string `db:"timeToNotify"`
+	Status         string `db:"status"`
+	RemindInterval int64  `db:"remindInterval"`
 }
 
 type UserNotificationSettings struct {
-	Timezone       string `bson:"timezone"`
-	TimeToNotify   string `bson:"timeToNotify"`
-	RemindInterval int64  `bson:"remindInterval"`
+	Timezone       string `db:"timezone"`
+	TimeToNotify   string `db:"timeToNotify"`
+	RemindInterval int64  `db:"remindInterval"`
 }
 
 func (u *UserCreate) GetDefaultUser(timezone string) UserCreate {

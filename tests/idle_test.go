@@ -12,14 +12,17 @@ import (
 
 func TestMarkAsTakenFlow(t *testing.T) {
 	modules, teardown := utils.Setup(t)
-	user := seeds.UserSeed(modules.DB, seeds.UserParams{})
+	user := seeds.UserSeed(modules.DB, nil)
 	chatId := user.ChatId
 
 	takeMessage := utils.GenerateMessage(chatId, string(enums.ActionTake))
 
-	modules.Bot.HandleMessage(takeMessage)
+	err := modules.Bot.HandleMessage(takeMessage)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	actualPillDay, err := utils.GetPillDayByChatId(modules.DB, chatId)
+	actualPillDay, err := seeds.FindPillDayByChatId(t, modules.DB, chatId)
 	if err != nil {
 		slog.Error(err.Error())
 	}

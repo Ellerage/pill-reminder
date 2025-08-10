@@ -21,7 +21,7 @@ func TestUndoTaken(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	user := seeds.UserSeed(modules.DB, seeds.UserParams{
+	user := seeds.UserSeed(modules.DB, &seeds.UserParams{
 		TimeToNotify: &seedTimeToNotify,
 	})
 
@@ -38,7 +38,7 @@ func TestUndoTaken(t *testing.T) {
 	}
 
 	// Check updated
-	pillDayActual, err := utils.GetPillDayByChatId(modules.DB, user.ChatId)
+	pillDayActual, err := seeds.FindPillDayByChatId(t, modules.DB, user.ChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
