@@ -2,6 +2,7 @@ package seeds
 
 import (
 	"database/sql"
+	"errors"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"testing"
@@ -55,7 +56,7 @@ func FindPillDayByChatId(t *testing.T, db *sqlx.DB, chatId int64) (*model.PillDa
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.ErrNotFound
 		}
 

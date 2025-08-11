@@ -2,6 +2,7 @@ package seeds
 
 import (
 	"database/sql"
+	"errors"
 	"log/slog"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
@@ -71,7 +72,7 @@ func GetUserByChatId(t *testing.T, db *sqlx.DB, chatId int64) (*model.User, erro
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.ErrNotFound
 		}
 
