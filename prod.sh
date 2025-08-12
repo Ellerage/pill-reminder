@@ -1,1 +1,0 @@
-nohup ./pill-reminder > pill-reminder.log 2>&1 &
