@@ -45,14 +45,17 @@ func (s *PillDayService) IsTakenToday(chatId int64) (bool, error) {
 
 	pillDay, err := s.pillDayRepo.GetByDateAndChatId(chatId, date)
 	if errors.Is(err, utils.ErrNotFound) {
-		if err := s.pillDayRepo.Create(chatId, nil); err != nil {
+		err = s.pillDayRepo.Create(chatId, nil)
+		if err != nil {
 			return false, err
 		}
+
+		return false, nil
 	}
 
 	if err != nil {
 		return false, err
 	}
 
-	return pillDay.HasTimeOfTaking(), err
+	return pillDay.HasTimeOfTaking(), nil
 }

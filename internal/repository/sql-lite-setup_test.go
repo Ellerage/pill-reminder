@@ -11,7 +11,7 @@ import (
 func SetupSQLite(t *testing.T) (*sqlx.DB, func()) {
 	t.Helper()
 
-	dbClient, err := sqlx.Open("sqlite3", ":memory:")
+	dbClient, err := sqlx.Open("sqlite", ":memory:")
 	require.NoError(t, err)
 
 	db.SetupSqlLiteTables(dbClient)

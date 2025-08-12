@@ -101,15 +101,10 @@ func (b *BotService) handleTimeEditing(message *tg.Message, userData HandleTimeE
 		return err
 	}
 
-	userTimeToNotify, err := utils.GetUserTimeFromUTC(user.TimeToNotify, user.Timezone)
-	if err != nil {
-		return err
-	}
-
 	actualUserSettings := utils.GetSettingsReplyText(
 		model.UserNotificationSettings{
 			Timezone:       user.Timezone,
-			TimeToNotify:   userTimeToNotify,
+			TimeToNotify:   user.TimeToNotify,
 			RemindInterval: user.RemindInterval,
 		},
 	)

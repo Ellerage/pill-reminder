@@ -7,7 +7,7 @@ import (
 )
 
 func SetupSQLite() (*sqlx.DB, func()) {
-	dbClient, err := sqlx.Open("sqlite3", ":memory:")
+	dbClient, err := sqlx.Open("sqlite", ":memory:")
 
 	if err != nil {
 		panic(err)

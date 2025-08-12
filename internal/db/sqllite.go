@@ -2,11 +2,11 @@ package db
 
 import (
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 func SetupSqlLite() (*sqlx.DB, error) {
-	db, err := sqlx.Open("sqlite3", "./pill-reminder.sqlite")
+	db, err := sqlx.Open("sqlite", "./pill-reminder.sqlite")
 	if err != nil {
 		return nil, err
 	}
