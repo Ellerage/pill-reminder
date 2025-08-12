@@ -1,9 +1,9 @@
 package model
 
 type PillDay struct {
-	Date         string  `bson:"date"`
-	TimeOfTaking *string `bson:"timeOfTaking,omitempty"`
-	ChatId       int64   `bson:"chatId"`
+	Date         string  `db:"date"`
+	TimeOfTaking *string `db:"timeOfTaking"`
+	ChatId       int64   `db:"chatId"`
 }
 
 func (p *PillDay) HasTimeOfTaking() bool {

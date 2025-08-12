@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	utilscommon "pill-reminder/internal/utils"
@@ -16,6 +15,7 @@ import (
 )
 
 func TestStartAppAndNotifications(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	nowTime := time.Now()
@@ -24,12 +24,11 @@ func TestStartAppAndNotifications(t *testing.T) {
 
 	timeToNotifyUTC, err := utilscommon.GetUTCFromUserTime(timeToNotify, loc)
 
-	fmt.Println("timeToNotifyUTC", timeToNotifyUTC)
 	if err != nil {
 		slog.Error(err.Error())
 	}
 
-	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{TimeToNotify: &timeToNotifyUTC})
+	userSeed := seeds.UserSeed(modules.DB, &seeds.UserParams{TimeToNotify: &timeToNotifyUTC})
 	userChatId := userSeed.ChatId
 
 	utils.InitScheduleForAllUsers(utils.StartScheduleHandlersParams{ReminderQueue: modules.ReminderQueue, UserService: modules.UserService})
@@ -40,7 +39,7 @@ func TestStartAppAndNotifications(t *testing.T) {
 	}
 
 	for i := range 2 {
-		utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*90, expected[i])
+		utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*65, expected[i])
 	}
 
 	message := utils.GenerateMessage(userChatId, string(enums.ActionTake))
@@ -49,19 +48,19 @@ func TestStartAppAndNotifications(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	pillDay, err := utils.GetPillDayByChatId(modules.DB, userChatId)
+	pillDay, err := seeds.FindPillDayByChatId(t, modules.DB, userChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
 	assert.True(t, pillDay.HasTimeOfTaking())
 
-	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*90, i18n.GetText("checked"))
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*65, i18n.GetText("checked"))
 
 	select {
 	case v := <-modules.BotAPI.SendCalls:
 		msg, _ := v.(tgbotapi.MessageConfig)
-		fmt.Println(msg.Text)
+		slog.Info(msg.Text)
 		t.Fatal("Notifications didn't stop")
 	case <-time.After(2 * time.Minute):
 	}

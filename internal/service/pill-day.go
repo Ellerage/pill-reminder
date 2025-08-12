@@ -4,8 +4,6 @@ import (
 	"errors"
 	"pill-reminder/internal/utils"
 	"time"
-
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type PillDayService struct {
@@ -24,11 +22,9 @@ func (s *PillDayService) MarkAsTakenNow(chatId int64) error {
 	dateTime := utils.GetNowDateTime()
 
 	pillDay, err := s.pillDayRepo.GetByDateAndChatId(chatId, dateTime)
-
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	if errors.Is(err, utils.ErrNotFound) {
 		return s.pillDayRepo.Create(chatId, &dateTime)
 	}
-
 	if err != nil {
 		return err
 	}
@@ -48,15 +44,15 @@ func (s *PillDayService) IsTakenToday(chatId int64) (bool, error) {
 	date := utils.GetNowDateTime()
 
 	pillDay, err := s.pillDayRepo.GetByDateAndChatId(chatId, date)
-
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	if errors.Is(err, utils.ErrNotFound) {
 		if err := s.pillDayRepo.Create(chatId, nil); err != nil {
 			return false, err
 		}
-
-		return false, nil
-	} else {
-		return pillDay.HasTimeOfTaking(), err
 	}
 
+	if err != nil {
+		return false, err
+	}
+
+	return pillDay.HasTimeOfTaking(), err
 }

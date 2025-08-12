@@ -2,19 +2,19 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"time"
 
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
+	"github.com/jmoiron/sqlx"
 )
 
 type PillDayRepo struct {
-	db *mongo.Database
+	db *sqlx.DB
 }
 
-func NewPillDayRepo(db *mongo.Database) *PillDayRepo {
+func NewPillDayRepo(db *sqlx.DB) *PillDayRepo {
 	return &PillDayRepo{db: db}
 }
 
@@ -22,17 +22,29 @@ func (repo *PillDayRepo) GetByDateAndChatId(chatId int64, date time.Time) (*mode
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var result *model.PillDay
-
 	formattedDate := date.Format("2006-01-02")
 
-	err := repo.db.Collection("pill-day").FindOne(ctx, bson.M{"date": formattedDate, "chatId": chatId}).Decode(&result)
+	row := repo.db.QueryRowContext(ctx, `
+		SELECT date, timeOfTaking, chatId
+		FROM pillDays
+		WHERE date = ? AND chatId = ?
+	`, formattedDate, chatId)
+
+	var result model.PillDay
+	err := row.Scan(
+		&result.Date,
+		&result.TimeOfTaking,
+		&result.ChatId,
+	)
 
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, utils.ErrNotFound
+		}
 		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 func (repo *PillDayRepo) Create(chatId int64, timeOfTaking *time.Time) error {
@@ -48,9 +60,8 @@ func (repo *PillDayRepo) Create(chatId int64, timeOfTaking *time.Time) error {
 		formattedTime = nil
 	}
 
-	pillDay := model.PillDay{Date: utils.GetFormattedNowDate(), TimeOfTaking: formattedTime, ChatId: chatId}
-
-	_, err := repo.db.Collection("pill-day").InsertOne(ctx, pillDay)
+	_, err := repo.db.ExecContext(ctx,
+		"INSERT INTO pillDays (date, timeOfTaking, chatId) VALUES (?, ?, ?)", utils.GetFormattedNowDate(), formattedTime, chatId)
 
 	return err
 }
@@ -59,10 +70,9 @@ func (repo *PillDayRepo) UpdateTimeByDate(chatId int64, dateTime time.Time) erro
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filter := bson.M{"date": dateTime.Format("2006-01-02"), "chatId": chatId}
-	toUpdate := bson.M{"$set": bson.M{"timeOfTaking": dateTime.Format("15:04")}}
-
-	_, err := repo.db.Collection("pill-day").UpdateOne(ctx, filter, toUpdate)
+	_, err := repo.db.ExecContext(ctx,
+		"UPDATE pillDays SET timeOfTaking = ? WHERE date = ? AND chatId = ?",
+		dateTime.Format("15:04"), dateTime.Format("2006-01-02"), chatId)
 
 	return err
 }
@@ -73,16 +83,10 @@ func (repo *PillDayRepo) UnsetTodayByChatId(chatId int64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filter := bson.M{
-		"date":   dateTime.Format("2006-01-02"),
-		"chatId": chatId,
-	}
-
-	toUpdate := bson.M{
-		"$unset": bson.M{"timeOfTaking": ""},
-	}
-
-	_, err := repo.db.Collection("pill-day").UpdateOne(ctx, filter, toUpdate)
+	_, err := repo.db.ExecContext(ctx,
+		`UPDATE pillDays SET timeOfTaking = NULL WHERE date = ? AND chatId = ?`,
+		dateTime.Format("2006-01-02"), chatId,
+	)
 
 	return err
 }

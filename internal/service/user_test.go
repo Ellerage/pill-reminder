@@ -3,13 +3,13 @@ package service
 import (
 	"errors"
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type MockUserRepo struct {
@@ -100,7 +100,7 @@ func TestUserService_Create_Success(t *testing.T) {
 
 	mockRepo.
 		On("GetByChatId", chatId).
-		Return(nil, mongo.ErrNoDocuments).
+		Return(nil, utils.ErrNotFound).
 		Once()
 
 	mockRepo.

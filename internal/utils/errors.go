@@ -8,4 +8,6 @@ var (
 	ErrAlreadyTakenToday       = errors.New("pill already taken")
 	ErrInvalidCommand          = errors.New("invalid command")
 	ErrInvalidReminderInterval = errors.New("invalid reminder interval")
+	ErrNoUserExist             = errors.New("user doesn't exist")
+	ErrNotFound                = errors.New("not found")
 )

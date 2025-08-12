@@ -28,12 +28,11 @@ func main() {
 	cfg := configs.InitConfig()
 	logger.Init()
 	i18n.Init()
-	mongo := db.ConnectMongo(db.ConnectMongoOptions{
-		Uri:      cfg.MONGO_URL,
-		DBName:   cfg.MONGO_DB_NAME,
-		UserName: cfg.MONGO_INITDB_ROOT_USERNAME,
-		Password: cfg.MONGO_INITDB_ROOT_PASSWORD,
-	})
+
+	sqlLite, err := db.SetupSqlLite()
+	if err != nil {
+		panic(err)
+	}
 
 	redis := db.ConnectRedis(ctx, db.ConnectRedisOptions{
 		Addr:     cfg.REDIS_URL,
@@ -43,8 +42,8 @@ func main() {
 	})
 
 	// Services
-	pillDayService := service.NewPillDayService(repository.NewPillDayRepo(mongo))
-	userService := service.NewUserService(repository.NewUserRepo(mongo))
+	pillDayService := service.NewPillDayService(repository.NewPillDayRepo(sqlLite))
+	userService := service.NewUserService(repository.NewUserRepo(sqlLite))
 	reminderQueueService := service.NewReminderQueueService(repository.NewQueueRepository(redis))
 
 	reminderQueue := reminderqueue.NewReminderQueue(
@@ -59,7 +58,7 @@ func main() {
 		},
 	)
 
-	err := reminderQueue.Scheduler.Ping()
+	err = reminderQueue.Scheduler.Ping()
 	if err != nil {
 		panic(err)
 	}
@@ -132,5 +131,13 @@ func main() {
 	defer ctxClose()
 	reminderQueue.Scheduler.Shutdown()
 	reminderQueue.Server.Shutdown()
-	reminderQueue.Client.Close()
+	err = reminderQueue.Client.Close()
+	if err != nil {
+		slog.Error(err.Error())
+	}
+
+	err = sqlLite.Close()
+	if err != nil {
+		slog.Error(err.Error())
+	}
 }

@@ -10,7 +10,6 @@ import (
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type BotService struct {
@@ -73,7 +72,7 @@ func (b *BotService) RegisterMessageListener(ctx context.Context) {
 				err := b.HandleMessage(update.Message)
 
 				switch {
-				case errors.Is(err, mongo.ErrNoDocuments):
+				case errors.Is(err, utils.ErrNotFound):
 					b.SendMessage(chatId, i18n.GetText("noAccount"), &enums.SendMessageButtons{Create: true}, nil)
 				case errors.Is(err, utils.ErrInvalidCommand):
 					b.SendInfoMessage(chatId)

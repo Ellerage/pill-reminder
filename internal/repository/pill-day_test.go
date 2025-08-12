@@ -1,30 +1,26 @@
 package repository
 
 import (
-	"context"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
+	"pill-reminder/tests/seeds"
 	"testing"
 	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func TestPillDay_GetByDateAndChatId(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 
 	pillDay := generatePillDay()
 	pillDayDate, parseDateErr := time.Parse("2006-01-02", pillDay.Date)
 	assert.NoError(t, parseDateErr)
 
-	pillDayColl := db.Collection("pill-day")
-
-	_, err := pillDayColl.InsertOne(context.Background(), pillDay)
-	assert.NoError(t, err)
+	db.Exec("INSERT INTO pillDays (date, timeOfTaking, chatId) VALUES (?, ?, ?)", pillDay.Date, pillDay.TimeOfTaking, pillDay.ChatId)
 
 	repo := NewPillDayRepo(db)
 
@@ -35,18 +31,15 @@ func TestPillDay_GetByDateAndChatId(t *testing.T) {
 }
 
 func TestPillDay_Create(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 
-	pillDayColl := db.Collection("pill-day")
 	repo := NewPillDayRepo(db)
 
-	// toCreate := generatePillDay()
-
 	chatId := gofakeit.Int64()
-	timeOfTaking := gofakeit.Date()
 	nowDate := utils.GetFormattedNowDate()
 
+	timeOfTaking := gofakeit.Date()
 	formattedTime := timeOfTaking.Format("15:04")
 
 	expected := model.PillDay{
@@ -56,34 +49,33 @@ func TestPillDay_Create(t *testing.T) {
 	}
 
 	err := repo.Create(chatId, &timeOfTaking)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	var found model.PillDay
-	err = pillDayColl.FindOne(context.Background(), bson.M{"chatId": chatId, "date": nowDate}).Decode(&found)
+	result, err := seeds.FindPillDayByChatId(t, db, chatId)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	require.NoError(t, err)
-	assert.Equal(t, expected, found)
+	assert.Equal(t, expected, *result)
 }
 
 func TestPillDayRepo_UpdateTimeByDate(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
-
-	pillDayColl := db.Collection("pill-day")
 
 	fakePillDay := generatePillDay()
 
 	now := utils.GetNowDateTime()
 	time := gofakeit.Date().Format("15:04")
 
-	_, err := pillDayColl.InsertOne(context.Background(), model.PillDay{
-		ChatId:       fakePillDay.ChatId,
-		Date:         now.Format("2006-01-02"),
-		TimeOfTaking: &time,
-	})
-
-	assert.NoError(t, err)
-
 	repo := NewPillDayRepo(db)
+
+	date := now.Format("2006-01-02")
+	seeds.PillDaySeed(db, &seeds.PillDayParams{Date: &date, TimeOfTaking: &time, ChatId: &fakePillDay.ChatId})
 
 	updateError := repo.UpdateTimeByDate(fakePillDay.ChatId, now)
 	assert.NoError(t, updateError)
@@ -95,8 +87,11 @@ func TestPillDayRepo_UpdateTimeByDate(t *testing.T) {
 		TimeOfTaking: &formattedNowTime,
 	}
 
-	var found model.PillDay
-	err = pillDayColl.FindOne(context.Background(), bson.M{"chatId": fakePillDay.ChatId, "date": now.Format("2006-01-02")}).Decode(&found)
+	found, err := seeds.FindPillDayByChatId(t, db, fakePillDay.ChatId)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.NoError(t, err)
 
 	assert.Equal(t, expected.ChatId, found.ChatId)

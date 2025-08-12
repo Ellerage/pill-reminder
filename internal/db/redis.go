@@ -33,7 +33,6 @@ func ConnectRedis(ctx context.Context, options ConnectRedisOptions) *redis.Clien
 	})
 
 	status := rdb.Ping(ctx)
-
 	slog.Info(fmt.Sprintf("Redis connect: %s. With: Addr: %s. DB: %v", status.String(), addr, options.DB))
 
 	return rdb

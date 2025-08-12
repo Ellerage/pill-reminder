@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"fmt"
+	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/utils/enums"
 	"pill-reminder/tests/seeds"
@@ -14,6 +14,7 @@ import (
 )
 
 func TestUndoTaken(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	seedTimeToNotify, err := utils.GetMinuteAheadNowUTC()
@@ -21,7 +22,7 @@ func TestUndoTaken(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	user := seeds.UserSeed(modules.DB, seeds.UserParams{
+	user := seeds.UserSeed(modules.DB, &seeds.UserParams{
 		TimeToNotify: &seedTimeToNotify,
 	})
 
@@ -38,7 +39,7 @@ func TestUndoTaken(t *testing.T) {
 	}
 
 	// Check updated
-	pillDayActual, err := utils.GetPillDayByChatId(modules.DB, user.ChatId)
+	pillDayActual, err := seeds.FindPillDayByChatId(t, modules.DB, user.ChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -51,9 +52,9 @@ func TestUndoTaken(t *testing.T) {
 	select {
 	case v := <-modules.BotAPI.SendCalls:
 		msg, _ := v.(tgbotapi.MessageConfig)
-		fmt.Println(msg.Text)
+		slog.Info(msg.Text)
 		t.Fatal("Notifications didn't stop")
-	case <-time.After(90 * time.Second):
+	case <-time.After(65 * time.Second):
 	}
 
 	// Undo action
@@ -62,10 +63,10 @@ func TestUndoTaken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 90*time.Second, i18n.GetText("undoneTaken"))
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 65*time.Second, i18n.GetText("undoneTaken"))
 
 	// Check notification resumed
-	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 90*time.Second, i18n.GetText("reminderNotification"))
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 65*time.Second, i18n.GetText("reminderNotification"))
 
 	t.Cleanup(teardown)
 }

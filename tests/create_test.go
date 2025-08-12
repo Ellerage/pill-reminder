@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"pill-reminder/tests/seeds"
 	"pill-reminder/tests/utils"
 	"testing"
 
@@ -16,7 +17,7 @@ func TestCreateFlow(t *testing.T) {
 
 	modules.Bot.HandleMessage(message)
 
-	user, err := utils.GetUserByChatId(modules.DB, fakeChatId)
+	user, err := seeds.GetUserByChatId(t, modules.DB, fakeChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

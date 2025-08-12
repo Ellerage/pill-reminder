@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	reminderqueue "pill-reminder/internal/reminder-queue"
 	"pill-reminder/internal/repository"
 	"pill-reminder/internal/schedulehandlers"
@@ -13,9 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type Return struct {
@@ -24,41 +22,19 @@ type Return struct {
 	PillDayService       *service.PillDayService
 	ReminderQueueService *service.ReminderQueueService
 	ReminderQueue        *reminderqueue.ReminderQueue
-	DB                   *mongo.Database
+	DB                   *sqlx.DB
 	Redis                *redis.Client
 	BotAPI               *mocks.BotAPI
 }
 
-var userService *service.UserService
-var reminderQueueService *service.ReminderQueueService
-var pillDayService *service.PillDayService
-var reminderQueue *reminderqueue.ReminderQueue
-var bot *tgbot.BotService
-var botApi *mocks.BotAPI
-
 func Setup(t *testing.T) (Return, func()) {
-	return Return{
-			Bot:                  bot,
-			PillDayService:       pillDayService,
-			UserService:          userService,
-			ReminderQueueService: reminderQueueService,
-			ReminderQueue:        reminderQueue,
-			DB:                   testsdb.MongoClient,
-			Redis:                testsdb.RedisClient,
-			BotAPI:               botApi,
-		}, func() {
-			botApi.ClearMessages()
-			CleanupDB()
-		}
-}
+	sqlLiteClient, closeSQLLiteDB := testsdb.SetupSQLite()
+	teardownRedis := testsdb.SetupRedis()
 
-func Init() func() {
-	fmt.Println("Init services")
-
-	userService = service.NewUserService(repository.NewUserRepo(testsdb.MongoClient))
-	reminderQueueService = service.NewReminderQueueService(repository.NewQueueRepository(testsdb.RedisClient))
-	pillDayService = service.NewPillDayService(repository.NewPillDayRepo(testsdb.MongoClient))
-	reminderQueue = reminderqueue.NewReminderQueue(
+	userService := service.NewUserService(repository.NewUserRepo(sqlLiteClient))
+	reminderQueueService := service.NewReminderQueueService(repository.NewQueueRepository(testsdb.RedisClient))
+	pillDayService := service.NewPillDayService(repository.NewPillDayRepo(sqlLiteClient))
+	reminderQueue := reminderqueue.NewReminderQueue(
 		reminderqueue.ReminderQueueDeps{
 			ReminderQueueService: reminderQueueService,
 			RedisConnectionOptions: reminderqueue.RedisConnectionOptions{
@@ -70,8 +46,8 @@ func Init() func() {
 		},
 	)
 
-	botApi = mocks.NewBotAPI()
-	bot = tgbot.NewBotService(tgbot.BotServiceParams{
+	botApi := mocks.NewBotAPI()
+	bot := tgbot.NewBotService(tgbot.BotServiceParams{
 		Timezone:        "UTC",
 		API:             botApi,
 		UserService:     userService,
@@ -79,8 +55,6 @@ func Init() func() {
 		ReminderService: reminderQueueService,
 		ReminderQueue:   reminderQueue,
 	})
-
-	reminderQueue.Scheduler.Ping()
 
 	go func() {
 		err := schedulehandlers.RegisterHandlers(
@@ -105,37 +79,44 @@ func Init() func() {
 		}
 	}()
 
+	return Return{
+			Bot:                  bot,
+			PillDayService:       pillDayService,
+			UserService:          userService,
+			ReminderQueueService: reminderQueueService,
+			ReminderQueue:        reminderQueue,
+			DB:                   sqlLiteClient,
+			Redis:                testsdb.RedisClient,
+			BotAPI:               botApi,
+		}, func() {
+			CleanupDB()
+
+			reminderQueue.Scheduler.Shutdown()
+			time.Sleep(2 * time.Second)
+
+			reminderQueue.Server.Stop()
+			time.Sleep(1 * time.Second)
+			reminderQueue.Server.Shutdown()
+			time.Sleep(2 * time.Second)
+
+			reminderQueue.Client.Close()
+
+			closeSQLLiteDB()
+			teardownRedis()
+		}
+}
+
+func Init() func() {
+
 	return func() {
-		reminderQueue.Scheduler.Shutdown()
-		time.Sleep(2 * time.Second)
 
-		reminderQueue.Server.Shutdown()
-		time.Sleep(2 * time.Second)
-
-		reminderQueue.Client.Close()
 	}
 }
 
 func CleanupDB() {
 	FlushRedis(testsdb.RedisClient)
-	ClearMongo(testsdb.MongoClient)
 }
 
 func FlushRedis(client *redis.Client) error {
 	return client.FlushDB(context.Background()).Err()
-}
-
-func ClearMongo(db *mongo.Database) error {
-	ctx := context.Background()
-	collections, err := db.ListCollectionNames(ctx, bson.D{})
-	if err != nil {
-		return err
-	}
-
-	for _, coll := range collections {
-		if err := db.Collection(coll).Drop(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
 }

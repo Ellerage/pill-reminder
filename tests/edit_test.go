@@ -16,13 +16,13 @@ import (
 func TestEnterEditingState(t *testing.T) {
 	modules, teardown := utils.Setup(t)
 
-	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{})
+	userSeed := seeds.UserSeed(modules.DB, nil)
 	userChatId := userSeed.ChatId
 
 	messageInit := utils.GenerateMessage(userChatId, string(enums.ActionEdit))
 	modules.Bot.HandleMessage(messageInit)
 
-	user2, err := utils.GetUserByChatId(modules.DB, userChatId)
+	user2, err := seeds.GetUserByChatId(t, modules.DB, userChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -33,10 +33,11 @@ func TestEnterEditingState(t *testing.T) {
 }
 
 func TestEditTimeToNotify(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	status := string(enums.UserStatusEditing)
-	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{Status: &status})
+	userSeed := seeds.UserSeed(modules.DB, &seeds.UserParams{Status: &status})
 	userChatId := userSeed.ChatId
 
 	newTimeToNotify := gofakeit.Date().Format("15:04")
@@ -44,7 +45,7 @@ func TestEditTimeToNotify(t *testing.T) {
 
 	modules.Bot.HandleMessage(messageNewTime)
 
-	updatedUser, err := utils.GetUserByChatId(modules.DB, userChatId)
+	updatedUser, err := seeds.GetUserByChatId(t, modules.DB, userChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -55,6 +56,7 @@ func TestEditTimeToNotify(t *testing.T) {
 }
 
 func TestEditTimeAndReminderNotifications(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	utils.InitScheduleForAllUsers(utils.StartScheduleHandlersParams{
@@ -63,7 +65,7 @@ func TestEditTimeAndReminderNotifications(t *testing.T) {
 	})
 
 	status := string(enums.UserStatusEditing)
-	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{Status: &status})
+	userSeed := seeds.UserSeed(modules.DB, &seeds.UserParams{Status: &status})
 	userChatId := userSeed.ChatId
 
 	newTimeToNotify := utils.GetNowUTCTime(1 * time.Minute)
@@ -80,17 +82,18 @@ func TestEditTimeAndReminderNotifications(t *testing.T) {
 }
 
 func TestEditRemindInterval(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	status := string(enums.UserStatusEditing)
-	userSeed := seeds.UserSeed(modules.DB, seeds.UserParams{Status: &status})
+	userSeed := seeds.UserSeed(modules.DB, &seeds.UserParams{Status: &status})
 	userChatId := userSeed.ChatId
 
 	expectedRemindIntervalMinutes := gofakeit.Minute()
 	messageNewRemindInterval := utils.GenerateMessage(userChatId, strconv.Itoa(expectedRemindIntervalMinutes))
 	modules.Bot.HandleMessage(messageNewRemindInterval)
 
-	updatedRemindIntervalUser, err := utils.GetUserByChatId(modules.DB, userChatId)
+	updatedRemindIntervalUser, err := seeds.GetUserByChatId(t, modules.DB, userChatId)
 	if err != nil {
 		t.Fatal(err.Error())
 	}

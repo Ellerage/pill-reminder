@@ -8,10 +8,8 @@ type BotAPI struct {
 	SendCalls chan tg.Chattable
 }
 
-var messageCh = make(chan tg.Chattable, 10)
-
 func NewBotAPI() *BotAPI {
-	return &BotAPI{SendCalls: messageCh}
+	return &BotAPI{SendCalls: make(chan tg.Chattable, 10)}
 }
 
 func (a *BotAPI) ClearMessages() {
@@ -25,4 +23,8 @@ func (a *BotAPI) Send(v tg.Chattable) (tg.Message, error) {
 
 func (a *BotAPI) GetUpdatesChan(config tg.UpdateConfig) tg.UpdatesChannel {
 	return make(tg.UpdatesChannel)
+}
+
+func (a *BotAPI) Request(c tg.Chattable) (*tg.APIResponse, error) {
+	return &tg.APIResponse{}, nil
 }

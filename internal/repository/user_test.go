@@ -1,39 +1,33 @@
 package repository
 
 import (
-	"context"
 	"pill-reminder/internal/model"
+	"pill-reminder/internal/utils"
 	"pill-reminder/internal/utils/enums"
+	"pill-reminder/tests/seeds"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func TestUserRepo_GetAll(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 
-	usersColl := db.Collection("users")
-
-	user1 := generateFakeUser()
-	user2 := generateFakeUser()
+	user1 := seeds.UserSeed(db, nil)
+	user2 := seeds.UserSeed(db, nil)
 
 	expectedMap := map[int64]model.User{
 		user1.ChatId: user1,
 		user2.ChatId: user2,
 	}
 
-	users := []interface{}{
+	users := []model.User{
 		user1,
 		user2,
 	}
-
-	_, err := usersColl.InsertMany(context.Background(), users)
-	require.NoError(t, err)
 
 	repo := NewUserRepo(db)
 
@@ -55,7 +49,7 @@ func TestUserRepo_GetAll(t *testing.T) {
 }
 
 func TestUserRepo_GetAll_Empty(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 	repo := NewUserRepo(db)
 
@@ -65,15 +59,10 @@ func TestUserRepo_GetAll_Empty(t *testing.T) {
 }
 
 func TestUserRepo_GetByChatId(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 
-	usersColl := db.Collection("users")
-
-	fakeUser := generateFakeUser()
-
-	_, err := usersColl.InsertOne(context.Background(), fakeUser)
-	require.NoError(t, err)
+	fakeUser := seeds.UserSeed(db, nil)
 
 	repo := NewUserRepo(db)
 
@@ -88,7 +77,7 @@ func TestUserRepo_GetByChatId(t *testing.T) {
 }
 
 func TestUserRepo_GetByChatId_Not_Found(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 
 	repo := NewUserRepo(db)
@@ -96,39 +85,30 @@ func TestUserRepo_GetByChatId_Not_Found(t *testing.T) {
 	foundUser, err := repo.GetByChatId(gofakeit.Int64())
 
 	assert.Error(t, err)
-	require.Equal(t, mongo.ErrNoDocuments, err)
+	require.Equal(t, utils.ErrNotFound, err)
 	assert.Nil(t, foundUser)
-
 }
 
 func TestUserRepo_Create(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 
-	userColl := db.Collection("users")
 	repo := NewUserRepo(db)
 
 	toCreate := generateFakeUser()
-
 	err := repo.Create(toCreate)
-
 	assert.NoError(t, err)
 
-	var found model.User
-	err = userColl.FindOne(context.Background(), bson.M{"chatId": toCreate.ChatId}).Decode(&found)
+	found, err := seeds.GetUserByChatId(t, db, toCreate.ChatId)
 	require.NoError(t, err)
-	assert.Equal(t, toCreate, found)
+	assert.Equal(t, toCreate, *found)
 }
 
 func TestUserRepo_Update(t *testing.T) {
-	db, teardown := SetupMongo(t)
+	db, teardown := SetupSQLite(t)
 	defer teardown()
 
-	userColl := db.Collection("users")
-
-	fakeUser := generateFakeUser()
-	_, err := userColl.InsertOne(context.Background(), fakeUser)
-	assert.NoError(t, err)
+	fakeUser := seeds.UserSeed(db, nil)
 
 	repo := NewUserRepo(db)
 
@@ -146,8 +126,7 @@ func TestUserRepo_Update(t *testing.T) {
 
 	assert.NoError(t, updateError)
 
-	var found model.User
-	err = userColl.FindOne(context.Background(), bson.M{"chatId": fakeUser.ChatId}).Decode(&found)
+	found, err := seeds.GetUserByChatId(t, db, fakeUser.ChatId)
 	assert.NoError(t, err)
 
 	require.Equal(t, *toUpdate.Timezone, found.Timezone)
