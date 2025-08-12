@@ -3,7 +3,6 @@ package schedulehandlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/model"
@@ -23,7 +22,6 @@ type DailyReminderHandler struct {
 
 func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
-		slog.Debug("makeDailyReminderHandler")
 		var parsed model.DailyReminderPayload
 
 		if err := json.Unmarshal(t.Payload(), &parsed); err != nil {
@@ -50,7 +48,7 @@ func makeDailyReminderHandler(deps DailyReminderHandler) asynq.HandlerFunc {
 
 		cronId, err := deps.reminderQueue.RegisterFollowup(parsed.ChatId, time.Duration(user.RemindInterval)*time.Minute)
 		if err != nil {
-			fmt.Println(err.Error())
+			slog.Error(err.Error())
 			return err
 		}
 

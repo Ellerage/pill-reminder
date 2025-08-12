@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"fmt"
+	"log/slog"
 	"pill-reminder/internal/i18n"
 	"pill-reminder/internal/utils/enums"
 	"pill-reminder/tests/seeds"
@@ -52,7 +52,7 @@ func TestTakeBeforeTimeToNotify(t *testing.T) {
 	select {
 	case v := <-modules.BotAPI.SendCalls:
 		msg, _ := v.(tgbotapi.MessageConfig)
-		fmt.Println(msg.Text)
+		slog.Info(msg.Text)
 		t.Fatal("Notifications didn't stop")
 	case <-time.After(2 * time.Minute):
 	}

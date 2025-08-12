@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	"pill-reminder/internal/model"
 	"pill-reminder/internal/utils"
 	"pill-reminder/tests/seeds"
@@ -42,9 +41,6 @@ func TestPillDay_Create(t *testing.T) {
 
 	timeOfTaking := gofakeit.Date()
 	formattedTime := timeOfTaking.Format("15:04")
-
-	fmt.Println("timeOfTaking", timeOfTaking)
-	fmt.Println("formattedTime", formattedTime)
 
 	expected := model.PillDay{
 		ChatId:       chatId,

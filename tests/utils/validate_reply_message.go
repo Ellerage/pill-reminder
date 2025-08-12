@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -14,7 +14,7 @@ func ValidateReplyMessage(t *testing.T, SendCalls chan tgbotapi.Chattable, userC
 	select {
 	case ch := <-SendCalls:
 		msg, ok := ch.(tgbotapi.MessageConfig)
-		fmt.Println("Channel message: ", msg.Text)
+		slog.Info("Channel message: ", msg.Text)
 		require.True(t, ok, "expected MessageConfig, got %T", ch)
 		assert.Equal(t, userChatId, msg.ChatID)
 		assert.Contains(t, msg.Text, text)
