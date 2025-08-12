@@ -48,8 +48,8 @@ func NewBotService(params BotServiceParams) *BotService {
 func (b *BotService) Init() error {
 	commands := GetBotCommands()
 
-	cfg := tgbotapi.NewSetMyCommands(commands...)
-	if _, err := b.api.Request(cfg); err != nil {
+	tgCommandList := tgbotapi.NewSetMyCommands(commands...)
+	if _, err := b.api.Request(tgCommandList); err != nil {
 		return err
 	}
 

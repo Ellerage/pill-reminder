@@ -3,6 +3,7 @@ package configs
 import (
 	"log"
 	"log/slog"
+	"os"
 	"sync"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -26,12 +27,25 @@ var (
 
 func InitConfig() *Config {
 	once.Do(func() {
-		err := godotenv.Load(".env")
 
-		if err != nil {
-			slog.Error("No .env file found (optional)")
+		env := os.Getenv("GO_ENV")
+
+		if env == "production" {
+			err := godotenv.Load(".env.prod")
+			if err != nil {
+				slog.Error("No .env file found (optional)")
+			} else {
+				slog.Info("Loaded .env.prod file")
+			}
+
 		} else {
-			slog.Info("Loaded .env file")
+			err := godotenv.Load(".env")
+
+			if err != nil {
+				slog.Error("No .env file found (optional)")
+			} else {
+				slog.Info("Loaded .env file")
+			}
 		}
 
 		cfg = &Config{}
@@ -42,12 +56,5 @@ func InitConfig() *Config {
 		log.Println("Init config")
 	})
 
-	return cfg
-}
-
-func GetConfig() *Config {
-	if cfg == nil {
-		log.Fatal("Config not initialized. Call config.InitConfig() first.")
-	}
 	return cfg
 }
