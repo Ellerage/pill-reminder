@@ -14,6 +14,7 @@ import (
 )
 
 func TestTakeBeforeTimeToNotify(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	seedTimeToNotify, err := utils.GetMinuteAheadNowUTC()

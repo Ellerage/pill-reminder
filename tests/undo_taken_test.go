@@ -14,6 +14,7 @@ import (
 )
 
 func TestUndoTaken(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	seedTimeToNotify, err := utils.GetMinuteAheadNowUTC()
@@ -53,7 +54,7 @@ func TestUndoTaken(t *testing.T) {
 		msg, _ := v.(tgbotapi.MessageConfig)
 		fmt.Println(msg.Text)
 		t.Fatal("Notifications didn't stop")
-	case <-time.After(90 * time.Second):
+	case <-time.After(65 * time.Second):
 	}
 
 	// Undo action
@@ -62,10 +63,10 @@ func TestUndoTaken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 90*time.Second, i18n.GetText("undoneTaken"))
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 65*time.Second, i18n.GetText("undoneTaken"))
 
 	// Check notification resumed
-	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 90*time.Second, i18n.GetText("reminderNotification"))
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, user.ChatId, 65*time.Second, i18n.GetText("reminderNotification"))
 
 	t.Cleanup(teardown)
 }

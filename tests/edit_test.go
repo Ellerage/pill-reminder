@@ -33,6 +33,7 @@ func TestEnterEditingState(t *testing.T) {
 }
 
 func TestEditTimeToNotify(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	status := string(enums.UserStatusEditing)
@@ -55,6 +56,7 @@ func TestEditTimeToNotify(t *testing.T) {
 }
 
 func TestEditTimeAndReminderNotifications(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	utils.InitScheduleForAllUsers(utils.StartScheduleHandlersParams{
@@ -80,6 +82,7 @@ func TestEditTimeAndReminderNotifications(t *testing.T) {
 }
 
 func TestEditRemindInterval(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	status := string(enums.UserStatusEditing)

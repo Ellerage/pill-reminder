@@ -175,7 +175,7 @@ func (q *ReminderQueue) Unregister(taskId string, reminderType enums.ReminderTyp
 		if err != nil {
 			return err
 		}
-		slog.Info(fmt.Sprintf("Unregistered Schedule %s", taskId))
+		slog.Info(fmt.Sprintf("Unregistered task %s", taskId))
 
 		return nil
 	}

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"context"
-	"fmt"
 	reminderqueue "pill-reminder/internal/reminder-queue"
 	"pill-reminder/internal/repository"
 	"pill-reminder/internal/schedulehandlers"
@@ -28,36 +27,14 @@ type Return struct {
 	BotAPI               *mocks.BotAPI
 }
 
-var userService *service.UserService
-var reminderQueueService *service.ReminderQueueService
-var pillDayService *service.PillDayService
-var reminderQueue *reminderqueue.ReminderQueue
-var bot *tgbot.BotService
-var botApi *mocks.BotAPI
-
 func Setup(t *testing.T) (Return, func()) {
-	return Return{
-			Bot:                  bot,
-			PillDayService:       pillDayService,
-			UserService:          userService,
-			ReminderQueueService: reminderQueueService,
-			ReminderQueue:        reminderQueue,
-			DB:                   testsdb.SqlLiteClient,
-			Redis:                testsdb.RedisClient,
-			BotAPI:               botApi,
-		}, func() {
-			botApi.ClearMessages()
-			CleanupDB()
-		}
-}
+	sqlLiteClient, closeSQLLiteDB := testsdb.SetupSQLite()
+	teardownRedis := testsdb.SetupRedis()
 
-func Init() func() {
-	fmt.Println("Init services")
-
-	userService = service.NewUserService(repository.NewUserRepo(testsdb.SqlLiteClient))
-	reminderQueueService = service.NewReminderQueueService(repository.NewQueueRepository(testsdb.RedisClient))
-	pillDayService = service.NewPillDayService(repository.NewPillDayRepo(testsdb.SqlLiteClient))
-	reminderQueue = reminderqueue.NewReminderQueue(
+	userService := service.NewUserService(repository.NewUserRepo(sqlLiteClient))
+	reminderQueueService := service.NewReminderQueueService(repository.NewQueueRepository(testsdb.RedisClient))
+	pillDayService := service.NewPillDayService(repository.NewPillDayRepo(sqlLiteClient))
+	reminderQueue := reminderqueue.NewReminderQueue(
 		reminderqueue.ReminderQueueDeps{
 			ReminderQueueService: reminderQueueService,
 			RedisConnectionOptions: reminderqueue.RedisConnectionOptions{
@@ -69,8 +46,8 @@ func Init() func() {
 		},
 	)
 
-	botApi = mocks.NewBotAPI()
-	bot = tgbot.NewBotService(tgbot.BotServiceParams{
+	botApi := mocks.NewBotAPI()
+	bot := tgbot.NewBotService(tgbot.BotServiceParams{
 		Timezone:        "UTC",
 		API:             botApi,
 		UserService:     userService,
@@ -78,8 +55,6 @@ func Init() func() {
 		ReminderService: reminderQueueService,
 		ReminderQueue:   reminderQueue,
 	})
-
-	reminderQueue.Scheduler.Ping()
 
 	go func() {
 		err := schedulehandlers.RegisterHandlers(
@@ -104,14 +79,37 @@ func Init() func() {
 		}
 	}()
 
+	return Return{
+			Bot:                  bot,
+			PillDayService:       pillDayService,
+			UserService:          userService,
+			ReminderQueueService: reminderQueueService,
+			ReminderQueue:        reminderQueue,
+			DB:                   sqlLiteClient,
+			Redis:                testsdb.RedisClient,
+			BotAPI:               botApi,
+		}, func() {
+			CleanupDB()
+
+			reminderQueue.Scheduler.Shutdown()
+			time.Sleep(2 * time.Second)
+
+			reminderQueue.Server.Stop()
+			time.Sleep(1 * time.Second)
+			reminderQueue.Server.Shutdown()
+			time.Sleep(2 * time.Second)
+
+			reminderQueue.Client.Close()
+
+			closeSQLLiteDB()
+			teardownRedis()
+		}
+}
+
+func Init() func() {
+
 	return func() {
-		reminderQueue.Scheduler.Shutdown()
-		time.Sleep(2 * time.Second)
 
-		reminderQueue.Server.Shutdown()
-		time.Sleep(2 * time.Second)
-
-		reminderQueue.Client.Close()
 	}
 }
 

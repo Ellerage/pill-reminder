@@ -16,6 +16,7 @@ import (
 )
 
 func TestStartAppAndNotifications(t *testing.T) {
+	t.Parallel()
 	modules, teardown := utils.Setup(t)
 
 	nowTime := time.Now()
@@ -24,7 +25,6 @@ func TestStartAppAndNotifications(t *testing.T) {
 
 	timeToNotifyUTC, err := utilscommon.GetUTCFromUserTime(timeToNotify, loc)
 
-	fmt.Println("timeToNotifyUTC", timeToNotifyUTC)
 	if err != nil {
 		slog.Error(err.Error())
 	}
@@ -40,7 +40,7 @@ func TestStartAppAndNotifications(t *testing.T) {
 	}
 
 	for i := range 2 {
-		utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*90, expected[i])
+		utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*65, expected[i])
 	}
 
 	message := utils.GenerateMessage(userChatId, string(enums.ActionTake))
@@ -56,7 +56,7 @@ func TestStartAppAndNotifications(t *testing.T) {
 
 	assert.True(t, pillDay.HasTimeOfTaking())
 
-	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*90, i18n.GetText("checked"))
+	utils.ValidateReplyMessage(t, modules.BotAPI.SendCalls, userChatId, time.Second*65, i18n.GetText("checked"))
 
 	select {
 	case v := <-modules.BotAPI.SendCalls:
