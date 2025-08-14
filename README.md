@@ -24,27 +24,5 @@ go mod tidy && make
 
 ## Deployment
 
-```
-# Local build
-make build_prod
-
-# Stop
-sudo systemctl stop pill-reminder
-
-# Upload
-scp ./pill-reminder <ssh>
-
-# Update
-sudo systemctl daemon-reexec
-sudo systemctl daemon-reload
-
-# Start
-sudo systemctl enable pill-reminder
-sudo systemctl start pill-reminder
-
-# Status Check
-sudo systemctl status pill-reminder
-
-# Logs
-journalctl -u pill-reminder -n 50
+run deploy-prod.sh
 ```
